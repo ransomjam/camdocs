@@ -17,6 +17,8 @@ import re
 import os
 import json
 import uuid
+import threading
+import time
 from datetime import datetime
 from io import BytesIO
 import logging
@@ -11000,6 +11002,68 @@ def download_document(job_id):
     )
 
 
+# Lock for PDF conversion to prevent concurrent Word instances
+pdf_conversion_lock = threading.Lock()
+
+def _convert_docx_to_pdf(docx_path, pdf_path):
+    """Helper to convert DOCX to PDF using OS-specific tools"""
+    import sys
+    import subprocess
+    
+    if sys.platform == 'win32':
+        # Windows: Use docx2pdf (requires Word installed)
+        # Use a lock to prevent concurrent Word instances/COM access
+        with pdf_conversion_lock:
+            try:
+                import pythoncom
+                # Initialize COM for this thread
+                pythoncom.CoInitialize()
+                
+                from docx2pdf import convert
+                
+                # Retry logic for flaky COM
+                max_retries = 3
+                last_error = None
+                
+                for attempt in range(max_retries):
+                    try:
+                        convert(docx_path, pdf_path)
+                        return True, None
+                    except Exception as e:
+                        last_error = e
+                        # Wait a bit before retry
+                        time.sleep(1)
+                        
+                return False, f'Windows PDF conversion failed after {max_retries} attempts: {str(last_error)}'
+                
+            except ImportError:
+                return False, 'docx2pdf not installed'
+            except Exception as e:
+                return False, f'Windows PDF conversion failed (Word installed?): {str(e)}'
+            finally:
+                try:
+                    pythoncom.CoUninitialize()
+                except:
+                    pass
+    else:
+        # Linux: Use LibreOffice (headless)
+        try:
+            subprocess.run(['libreoffice', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False, 'LibreOffice not found on server. PDF conversion unavailable.'
+
+        output_dir = os.path.dirname(pdf_path)
+        cmd = ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', output_dir, docx_path]
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if os.path.exists(pdf_path):
+                return True, None
+            else:
+                return False, 'PDF conversion failed to produce output file.'
+        except Exception as e:
+            return False, f'LibreOffice conversion failed: {str(e)}'
+
+
 @app.route('/download-pdf/<job_id>', methods=['GET'])
 def download_pdf(job_id):
     """Convert and download document as PDF"""
@@ -11028,41 +11092,12 @@ def download_pdf(job_id):
         return send_file(pdf_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
 
     # Convert to PDF
-    try:
-        import sys
-        import subprocess
-        
-        if sys.platform == 'win32':
-            # Windows: Use docx2pdf (requires Word installed)
-            try:
-                import pythoncom
-                pythoncom.CoInitialize()
-                from docx2pdf import convert
-                convert(docx_path, pdf_path)
-            except ImportError:
-                return jsonify({'error': 'docx2pdf not installed'}), 500
-            except Exception as e:
-                return jsonify({'error': f'Windows PDF conversion failed (Word installed?): {str(e)}'}), 500
-        else:
-            # Linux: Use LibreOffice (headless)
-            # libreoffice --headless --convert-to pdf --outdir <dir> <file>
-            # Check if libreoffice is installed
-            try:
-                subprocess.run(['libreoffice', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                return jsonify({'error': 'LibreOffice not found on server. PDF conversion unavailable.'}), 501
-
-            cmd = ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', OUTPUT_FOLDER, docx_path]
-            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            
-        if os.path.exists(pdf_path):
-            return send_file(pdf_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
-        else:
-            return jsonify({'error': 'PDF conversion failed to produce output file.'}), 500
-            
-    except Exception as e:
-        logger.error(f"PDF conversion error: {e}")
-        return jsonify({'error': f'PDF conversion failed: {str(e)}'}), 500
+    success, error = _convert_docx_to_pdf(docx_path, pdf_path)
+    
+    if success and os.path.exists(pdf_path):
+        return send_file(pdf_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
+    else:
+        return jsonify({'error': error or 'PDF conversion failed'}), 500
 
 
 def generate_preview_markdown(structured):
@@ -11427,6 +11462,38 @@ def download_file(filename):
         return send_file(filepath, as_attachment=as_attachment)
         
     return jsonify({'error': 'File not found'}), 404
+
+
+@app.route('/api/download-pdf/<filename>', methods=['GET'])
+def download_file_pdf(filename):
+    """Download generated file as PDF"""
+    # Locate the DOCX file (same logic as download_file)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    cover_page_dir = os.path.join(os.path.dirname(base_dir), 'outputs', 'Cover Pages')
+    
+    # Check Cover Pages folder
+    docx_path = os.path.join(cover_page_dir, filename)
+    if not os.path.exists(docx_path):
+        # Check Output folder
+        docx_path = os.path.join(OUTPUT_FOLDER, filename)
+        if not os.path.exists(docx_path):
+            return jsonify({'error': 'File not found'}), 404
+            
+    # Define PDF path
+    pdf_filename = os.path.splitext(filename)[0] + '.pdf'
+    pdf_path = os.path.splitext(docx_path)[0] + '.pdf'
+    
+    # Check if PDF already exists
+    if os.path.exists(pdf_path):
+        return send_file(pdf_path, as_attachment=True, download_name=pdf_filename, mimetype='application/pdf')
+        
+    # Convert to PDF
+    success, error = _convert_docx_to_pdf(docx_path, pdf_path)
+    
+    if success and os.path.exists(pdf_path):
+        return send_file(pdf_path, as_attachment=True, download_name=pdf_filename, mimetype='application/pdf')
+    else:
+        return jsonify({'error': error or 'PDF conversion failed'}), 500
 
 # --- End Cover Page Generator Integration ---
 
