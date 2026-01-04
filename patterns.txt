@@ -3045,3 +3045,66 @@ Output (formatted):
    and flagged with should_center=True in the analysis result
 
 ================================================================================
+
+# AI CONTENT FORMATTING PATTERNS
+
+## 1. MARKDOWN ARTIFACTS
+
+### Pattern AI_Bold: Markdown Bold
+\*\*(.*?)\*\*
+
+### Pattern AI_Italic: Markdown Italic
+\*(.*?)\*
+
+### Pattern AI_Header: Markdown Headers
+^(#{1,6})\s+(.*)$
+
+### Pattern AI_Bullet: Markdown Bullets
+^[\-\*]\s+(.*)$
+
+### Pattern AI_Numbered: Markdown Numbered Lists
+^\d+\.\s+(.*)$
+
+## 2. AI META-COMMENTARY
+
+### Pattern AI_Intro: Intro phrases
+^(Here is the|Here are the|Sure, here is|Certainly, here is).*$
+
+### Pattern AI_Outro: Outro phrases
+^(In conclusion|To summarize|Hope this helps).*$
+
+### Pattern AI_Note: Notes
+^Note:\s+.*$
+
+================================================================================
+
+# AI CONTENT FORMATTING PATTERNS
+
+## 1. MARKDOWN ARTIFACTS
+
+### Pattern AI_Bold: Markdown Bold
+\*\*(.*?)\*\*
+
+### Pattern AI_Italic: Markdown Italic
+\*(.*?)\*
+
+### Pattern AI_Header: Markdown Headers
+^(#{1,6})\s+(.*)$
+
+### Pattern AI_Bullet: Markdown Bullets
+^[\-\*]\s+(.*)$
+
+### Pattern AI_Numbered: Markdown Numbered Lists
+^\d+\.\s+(.*)$
+
+## 2. AI META-COMMENTARY
+
+### Pattern AI_Intro: Intro phrases
+^(Here is the|Here are the|Sure, here is|Certainly, here is).*$
+
+### Pattern AI_Outro: Outro phrases
+^(In conclusion|To summarize|Hope this helps).*$
+
+### Pattern AI_Note: Notes
+^Note:\s+.*$
+
