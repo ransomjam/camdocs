@@ -1,0 +1,14 @@
+[
+  {"code": "COMP201", "title": "Introduction to Computer Science"},
+  {"code": "COMP202", "title": "Digital Logic Design"},
+  {"code": "COMP301", "title": "Data Structures and Algorithms"},
+  {"code": "COMP302", "title": "Database Systems"},
+  {"code": "COMP303", "title": "Operating Systems"},
+  {"code": "COMP304", "title": "Computer Architecture"},
+  {"code": "COMP401", "title": "Artificial Intelligence"},
+  {"code": "COMP402", "title": "Software Engineering"},
+  {"code": "COMP403", "title": "Computer Networks"},
+  {"code": "MATH201", "title": "Calculus I"},
+  {"code": "MATH202", "title": "Linear Algebra"},
+  {"code": "PHY201", "title": "General Physics I"}
+]

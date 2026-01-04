@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application Data (Don't commit generated files)
+outputs/
+uploads/
+Cover Pages/
+backend/outputs/
+backend/uploads/
+backend/Cover Pages/
+*.log
+debug_result_dump.txt

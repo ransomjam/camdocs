@@ -1,0 +1,3047 @@
+
+# PATTERNS FOR HIERARCHICAL NUMBERING CORRECTIONS
+
+## 1. PATTERNS DETECTING HIERARCHICAL RELATIONSHIPS IN HEADINGS
+
+### Pattern A: Sequential Major/Minor Topics
+(?i)^\s*(\d+(?:\.\d+)*)\s+([A-Z\s]{2,})(?:\s+|$)\n^\s*(\d+(?:\.\d+)*)\s+([A-Z\s]{2,})(?:\s+|$)
+
+### Pattern B: Temporal/Categorical Relationships
+(?i)(\d+(?:\.\d+)*)\s+(WEEK|MONTH|YEAR|QUARTER|TERM|SEMESTER)\s+([A-Z\d]+)(?:\s+|$)
+
+# Followed by:
+(\d+(?:\.\d+)*)\s+(DAY|SESSION|CLASS|PERIOD|LECTURE)\s+([A-Z\d]+)(?:\s+|$)
+
+### Pattern C: General → Specific Patterns
+(?i)^\s*(\d+(?:\.\d+)*)\s+([A-Z][^\.]{5,30})(?:\s+|$)\n^\s*(\d+(?:\.\d+)*)\s+([A-Z][^\.]{5,30})(?:\s+|$)
+
+## 2. COMMON HIERARCHICAL PATTERNS
+
+### Pattern D: Week/Day Pattern
+(?i)(\d+\.\d+)\s+WEEK\s+([A-Z\d]+).*?\n(\d+\.\d+)\s+DAY\s+([A-Z\d]+)
+
+### Pattern E: Unit/Lesson Pattern
+(?i)(\d+\.\d+)\s+UNIT\s+([A-Z\d]+).*?\n(\d+\.\d+)\s+LESSON\s+([A-Z\d]+)
+
+### Pattern F: Chapter/Section Pattern
+(?i)(\d+\.\d+)\s+CHAPTER\s+([A-Z\d]+).*?\n(\d+\.\d+)\s+SECTION\s+([A-Z\d]+)
+
+### Pattern G: Module/Topic Pattern
+(?i)(\d+\.\d+)\s+MODULE\s+([A-Z\d]+).*?\n(\d+\.\d+)\s+TOPIC\s+([A-Z\d]+)
+
+## 3. PATTERNS WITH ROMAN NUMERALS/LETTERS
+
+### Pattern H: Lettered Hierarchies
+(?i)(\d+\.\d+)\s+([A-Z])\s+.*?\n(\d+\.\d+)\s+(\d+)\s+.*?
+
+### Pattern I: Roman Numeral Hierarchies
+(?i)(\d+\.\d+)\s+(?:CHAPTER|PART|SECTION)\s+([IVXLCDM]+).*?\n(\d+\.\d+)\s+([A-Z\d]+)
+
+## 4. CONTEXTUAL HIERARCHY DETECTION
+
+### Pattern J: Short Title Followed by Specific Title
+^(\d+\.\d+)\s+([A-Z]{2,15})\s*$\n^(\d+\.\d+)\s+([A-Z].{10,})
+
+### Pattern K: Category/Subcategory Pattern
+(?i)^(\d+\.\d+)\s+(TYPES|CATEGORIES|CLASSIFICATIONS|FORMS|MODELS).*?\n^(\d+\.\d+)\s+(.*?MODEL|.*?TYPE|.*?FORM)
+
+## 5. NUMERICAL SEQUENCE PATTERNS
+
+### Pattern L: Same Parent Number Sequence
+^(\d+)\.(\d+)\s+.*$\n^\1\.(\d+)\s+.*$
+
+### Pattern M: Consecutive Numbering with Semantic Clues
+(\d+\.\d+)\s+.*?\b(GENERAL|OVERVIEW|INTRODUCTION|BASIC|FUNDAMENTAL|MAIN)\b.*?\n(\d+\.\d+)\s+.*?\b(SPECIFIC|DETAILED|ADVANCED|IMPLEMENTATION|APPLICATION|CASE)\b.*?
+
+## 6. CONTENT-BASED HIERARCHY DETECTION
+
+### Pattern N: Heading Similarity Detection
+(\d+\.\d+)\s+.*?\b(COST\s+SHARING)\b.*?\n(\d+\.\d+)\s+.*?\b(COST\s+SHARING|FUNDING|FINANCE|TUITION)\b.*?
+
+### Pattern O: Acronym/Full Form Pattern
+(\d+\.\d+)\s+.*?\b([A-Z]{2,})\b\s+.*?\n(\d+\.\d+)\s+.*?\b(?:Definition|Meaning|Explanation|Overview)\b.*?
+
+## 7. STRUCTURAL HIERARCHY PATTERNS
+
+### Pattern P: List-like Structures
+(\d+\.\d+)\s+.*?\n(\d+\.\d+)\s+(?:[0-9]+[\.\)]\s+.*?|[a-z]\)\s+.*?|•\s+.*?|\-\s+.*?)
+
+### Pattern Q: Procedure/Steps Pattern
+(\d+\.\d+)\s+.*?\b(PROCEDURE|STEPS|METHOD|PROCESS|APPROACH)\b.*?\n(\d+\.\d+)\s+(?:STEP|PHASE|STAGE)\s+\d+
+
+## 8. CORRECTION PATTERNS
+
+### Pattern R: Convert Flat to Hierarchical
+(?i)^(\d+\.\d+)\s+(WEEK|UNIT|MODULE|CHAPTER|PART)\s+([A-Z\d]+)(?:\s+|$)\n^(\d+\.\d+)\s+(DAY|LESSON|TOPIC|SECTION|SESSION)\s+([A-Z\d]+)(?:\s+|$)
+
+### Pattern S: Increment-Based Correction
+^(\d+\.\d+)\s+(.*?)\n^(\1(?=\D)|\d+\.\d+)\s+(.*?)$
+
+## 9. SEMANTIC RELATIONSHIP DICTIONARY
+# See code for hierarchical_pairs dictionary
+
+## 10. COMPREHENSIVE HIERARCHY DETECTION FUNCTION
+# See code for detect_hierarchical_issues and correct_hierarchical_numbering
+
+## 11. VALIDATION PATTERNS
+
+### Pattern T: Validate Correct Hierarchy
+(?i)^(\d+(?:\.\d+)*)\s+.*?\n^(\1\.\d+)\s+.*?$
+
+### Pattern U: Detect Incorrect Flat Hierarchy
+(?i)^(\d+\.\d+)\s+.*?\b(WEEK|UNIT|CHAPTER|MODULE)\b.*?\n^(\d+\.\d+)\s+.*?\b(DAY|LESSON|TOPIC|SESSION)\b.*?$
+
+### Pattern V: Suggest Corrections
+(?i)^(?P<parent_num>\d+\.\d+)\s+(?P<parent_title>.*?\b(?:WEEK|UNIT|CHAPTER)\b.*?)\n^(?P<child_num>\d+\.\d+)\s+(?P<child_title>.*?\b(?:DAY|LESSON|TOPIC)\b.*?)$
+
+# Correction suggestion:
+# Change: {child_num} {child_title}
+# To: {parent_num}.1 {child_title}
+
+## 12. COMMON EXAMPLES TO DETECT
+
+# 3.6 WEEK TWO
+# 3.7 DAY ONE        → Should be 3.6.1 DAY ONE
+# 4.2 UNIT THREE
+# 4.3 LESSON ONE     → Should be 4.2.1 LESSON ONE
+# 5.1 THEORY
+# 5.2 IMPLEMENTATION → Should be 5.1.1 IMPLEMENTATION
+# 6.4 TYPES
+# 6.5 TYPE A         → Should be 6.4.1 TYPE A
+# 7.3 METHODOLOGY
+# 7.4 STEP 1         → Should be 7.3.1 STEP 1
+
+├── Pattern: ^(ACKNOWLEDGEMENT|ABSTRACT|INTRODUCTION|CONCLUSION|REFERENCES|
+│            BIBLIOGRAPHY|APPENDIX|APPENDICES|GLOSSARY|INDEX|PREFACE|
+│            FOREWORD|DEDICATION|TABLE OF CONTENTS|LIST OF FIGURES|
+│            LIST OF TABLES)S?$ [IGNORECASE]
+│   Detects: Standard academic section keywords
+│   Example: "ABSTRACT", "REFERENCES", "BIBLIOGRAPHY", "APPENDIX"
+│   Confidence: 95%
+
+├── Pattern: ^(EXECUTIVE\s+SUMMARY)$ [IGNORECASE]
+│   Detects: Executive summary heading
+│   Example: "EXECUTIVE SUMMARY"
+│   Confidence: 95%
+
+├── Pattern: ^(LITERATURE\s+REVIEW)$ [IGNORECASE]
+│   Detects: Literature review section
+│   Example: "LITERATURE REVIEW"
+│   Confidence: 95%
+
+├── Pattern: ^(RESEARCH\s+METHODOLOGY)$ [IGNORECASE]
+│   Detects: Research methodology section
+│   Example: "RESEARCH METHODOLOGY"
+│   Confidence: 95%
+
+├── Pattern: ^(DATA\s+ANALYSIS)$ [IGNORECASE]
+│   Detects: Data analysis section
+│   Example: "DATA ANALYSIS"
+│   Confidence: 95%
+
+├── Pattern: ^(FINDINGS\s+AND\s+DISCUSSION)$ [IGNORECASE]
+│   Detects: Findings and discussion section
+│   Example: "FINDINGS AND DISCUSSION"
+│   Confidence: 95%
+
+└── Pattern: ^(RECOMMENDATIONS)$ [IGNORECASE]
+    Detects: Recommendations section
+    Example: "RECOMMENDATIONS"
+    Confidence: 95%
+
+
+================================================================================
+CATEGORY: HEADING_2 (Sub-Section Headers)
+================================================================================
+Total Patterns: 6
+Confidence: 75-90%
+
+├── Pattern: ^([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,6})$
+│   Detects: Title Case headings (2-7 capitalized words)
+│   Example: "Background and Motivation"
+│   Confidence: 90%
+
+├── Pattern: ^\d+\.\d+\s+([A-Z].{3,80})$
+│   Detects: Numbered sub-sections (1.1, 2.3)
+│   Example: "1.1 Overview of Cloud Computing"
+│   Confidence: 90%
+
+├── Pattern: ^([A-Z][a-z]+\s+and\s+[A-Z][a-z]+)$
+│   Detects: "X and Y" format headings
+│   Example: "Methods and Results"
+│   Confidence: 90%
+
+├── Pattern: ^([A-Z][a-z]+\s+of\s+[A-Z][a-z]+.*)$
+│   Detects: "X of Y" format headings
+│   Example: "Analysis of Data"
+│   Confidence: 90%
+
+├── Pattern: ^(Section\s+\d+[:\s].*)$ [IGNORECASE]
+│   Detects: Section N: Title format
+│   Example: "Section 1: Introduction"
+│   Confidence: 90%
+
+└── Pattern: ^(\d+\s+[A-Z][a-z]+(?:\s+[A-Z]?[a-z]+)*)$
+    Detects: Number followed by title
+    Example: "1 Introduction"
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: HEADING_3 (Sub-Sub-Section Headers)
+================================================================================
+Total Patterns: 6
+Confidence: 85%
+
+├── Pattern: ^\d+\.\d+\.\d+\s+(.+)$
+│   Detects: Triple-numbered sections
+│   Example: "1.1.1 Specific Details"
+│   Confidence: 85%
+
+├── Pattern: ^([a-z]\)\s+.+)$
+│   Detects: Lettered subsections with parenthesis
+│   Example: "a) First subsection"
+│   Confidence: 85%
+
+├── Pattern: ^(\([a-z]\)\s+.+)$
+│   Detects: Lettered subsections with full parentheses
+│   Example: "(a) First subsection"
+│   Confidence: 85%
+
+├── Pattern: ^([A-Z][a-z]+:)\s*$
+│   Detects: Single word followed by colon
+│   Example: "Definition:"
+│   Confidence: 85%
+
+├── Pattern: ^([ivx]+\.\s+.+)$ [IGNORECASE]
+│   Detects: Roman numeral subsections
+│   Example: "i. First point"
+│   Confidence: 85%
+
+└── Pattern: ^\(\d+\)\s+(.+)$
+    Detects: Parenthesized number subsections
+    Example: "(1) First item"
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: REFERENCE (Citation Patterns - APA, MLA, Chicago, IEEE)
+================================================================================
+Total Patterns: 10
+Confidence: 90%
+
+├── Pattern: ^([A-Z][a-z]+,?\s+[A-Z]\..*\(\d{4}\))
+│   Detects: Basic APA author format
+│   Example: "Smith, J. (2024)"
+│   Confidence: 90%
+
+├── Pattern: ^([A-Z][a-z]+,\s+[A-Z]\.\s+[A-Z]?\.?\s*\(\d{4}\))
+│   Detects: APA with middle initial
+│   Example: "Smith, J. A. (2024)"
+│   Confidence: 90%
+
+├── Pattern: ^([A-Z][a-z]+\s+et\s+al\..*\d{4})
+│   Detects: "et al." citations
+│   Example: "Smith et al. (2024)"
+│   Confidence: 90%
+
+├── Pattern: ^\[\d+\]
+│   Detects: IEEE numbered references
+│   Example: "[1] Author, I. Title..."
+│   Confidence: 90%
+
+├── Pattern: ^([A-Z][a-z]+.*Retrieved from)
+│   Detects: Web source citations
+│   Example: "Smith, J. Retrieved from https://..."
+│   Confidence: 90%
+
+├── Pattern: ^([A-Z][a-z]+.*https?://)
+│   Detects: URL-containing citations
+│   Example: "Smith (2024). https://example.com"
+│   Confidence: 90%
+
+├── Pattern: ^([A-Z][a-z]+,\s+[A-Z]\.\s+\(\d{4}\)\.)
+│   Detects: Full APA format
+│   Example: "Smith, J. (2024)."
+│   Confidence: 90%
+
+├── Pattern: ^([A-Z][a-z]+,\s+[A-Z][a-z]+\.\s+".+"\s+.+\d{4})
+│   Detects: MLA format with quoted title
+│   Example: "Smith, John. \"Article Title\" Journal 2024"
+│   Confidence: 90%
+
+├── Pattern: ^\d+\.\s+[A-Z][a-z]+,?\s+[A-Z]
+│   Detects: Numbered reference list
+│   Example: "1. Smith, J. Title..."
+│   Confidence: 90%
+
+└── Pattern: ^([A-Z][a-z]+,?\s+[A-Z]\.\s*(&|and)\s+[A-Z][a-z]+)
+    Detects: Multi-author citations
+    Example: "Smith, J. & Johnson, A."
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: BULLET_LIST (Unordered Lists)
+================================================================================
+Total Patterns: 28
+Confidence: 90-100%
+Purpose: Detect all bullet formats and map them to corresponding Microsoft Word bullet styles
+
+--- STANDARD BULLET CHARACTERS ---
+
+├── Pattern: ^\s*[•]\s+(.+)$
+│   Detects: Standard round bullet (U+2022)
+│   Word Equivalent: Standard bullet (•)
+│   Example: "• First item"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[○]\s+(.+)$
+│   Detects: White circle (U+25CB)
+│   Word Equivalent: ○ (white circle)
+│   Example: "○ Alternative item"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[●]\s+(.+)$
+│   Detects: Black circle (U+25CF)
+│   Word Equivalent: ● (black circle)
+│   Example: "● Important point"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[◦]\s+(.+)$
+│   Detects: White small circle (U+25E6)
+│   Word Equivalent: ◦ (white small circle)
+│   Example: "◦ Sub-item"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[▪]\s+(.+)$
+│   Detects: Black small square (U+25AA)
+│   Word Equivalent: ▪ (small square)
+│   Example: "▪ Feature list"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[■]\s+(.+)$
+│   Detects: Black square (U+25A0)
+│   Word Equivalent: ■ (square)
+│   Example: "■ Major point"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[□]\s+(.+)$
+│   Detects: White square (U+25A1)
+│   Word Equivalent: □ (white square)
+│   Example: "□ To-do item"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[◆]\s+(.+)$
+│   Detects: Black diamond (U+25C6)
+│   Word Equivalent: ◆ (diamond)
+│   Example: "◆ Diamond point"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[◇]\s+(.+)$
+│   Detects: White diamond (U+25C7)
+│   Word Equivalent: ◇ (white diamond)
+│   Example: "◇ Optional"
+│   Confidence: 100%
+
+--- DASH/ARROW BULLETS ---
+
+├── Pattern: ^\s*[-–—]\s+(.+)$
+│   Detects: Hyphen, en-dash, em-dash bullets
+│   Word Equivalent: – (en dash)
+│   Example: "- Item one", "– Item two"
+│   Confidence: 95%
+
+├── Pattern: ^\s*[→➔➜➤➢]\s+(.+)$
+│   Detects: Arrow bullets
+│   Word Equivalent: → (right arrow)
+│   Example: "→ Next step", "➤ Action item"
+│   Confidence: 95%
+
+├── Pattern: ^\s*[←]\s+(.+)$
+│   Detects: Left arrow bullet
+│   Word Equivalent: ← (left arrow)
+│   Example: "← Previous step"
+│   Confidence: 95%
+
+--- ASTERISK/VARIANT BULLETS ---
+
+├── Pattern: ^\s*\*\s+(.+)$
+│   Detects: Asterisk bullet
+│   Word Equivalent: * (asterisk) or • (standard bullet)
+│   Example: "* List item"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[⁎⁑※]\s+(.+)$
+│   Detects: Variant asterisk bullets
+│   Word Equivalent: * (asterisk)
+│   Example: "⁎ Note", "※ Important"
+│   Confidence: 90%
+
+├── Pattern: ^\s*[✱✲✳✴]\s+(.+)$
+│   Detects: Star variant bullets
+│   Word Equivalent: ✱ (heavy asterisk) or • (standard)
+│   Example: "✱ Key point", "✳ Star item"
+│   Confidence: 90%
+
+--- CHECKBOX BULLETS ---
+
+├── Pattern: ^\s*[☐]\s+(.+)$
+│   Detects: Empty checkbox (U+2610)
+│   Word Equivalent: ☐ (ballot box)
+│   Example: "☐ Task pending"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[☑]\s+(.+)$
+│   Detects: Checked checkbox (U+2611)
+│   Word Equivalent: ☑ (ballot box with check)
+│   Example: "☑ Completed task"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[✓✔]\s+(.+)$
+│   Detects: Check mark bullets
+│   Word Equivalent: ✓ (check mark)
+│   Example: "✓ Done", "✔ Verified"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[✗✘]\s+(.+)$
+│   Detects: X mark bullets
+│   Word Equivalent: ✗ (ballot x)
+│   Example: "✗ Cancelled", "✘ Error"
+│   Confidence: 100%
+
+--- NUMERIC-LIKE BULLETS ---
+
+├── Pattern: ^\s*[⓿-⓽]\s+(.+)$
+│   Detects: Circled number bullets
+│   Word Equivalent: ⓿-⓽ (circled numbers)
+│   Example: "① First", "② Second"
+│   Confidence: 95%
+
+├── Pattern: ^\s*[❶-❿]\s+(.+)$
+│   Detects: Dingbat number bullets
+│   Word Equivalent: ❶-❿ (dingbat numbers)
+│   Example: "❶ Primary", "❷ Secondary"
+│   Confidence: 95%
+
+├── Pattern: ^\s*[➀-➉]\s+(.+)$
+│   Detects: Plain enclosed number bullets
+│   Word Equivalent: ➀-➉ (enclosed numbers)
+│   Example: "➀ Step one", "➁ Step two"
+│   Confidence: 95%
+
+--- AI-GENERATED/CREATIVE BULLETS ---
+
+├── Pattern: ^\s*[✦✧]\s+(.+)$
+│   Detects: Sparkle/star creative bullets
+│   Word Equivalent: ✦ (black four-pointed star)
+│   Example: "✦ Premium feature", "✧ Special offer"
+│   Confidence: 90%
+
+├── Pattern: ^\s*[★☆]\s+(.+)$
+│   Detects: Star rating bullets
+│   Word Equivalent: ★ (black star)
+│   Example: "★ Top feature", "☆ Good feature"
+│   Confidence: 100%
+
+├── Pattern: ^\s*[♥♡]\s+(.+)$
+│   Detects: Heart bullets
+│   Word Equivalent: ♥ (black heart suit)
+│   Example: "♥ Favorite", "♡ Like"
+│   Confidence: 95%
+
+├── Pattern: ^\s*[◆◇]\s+(.+)$
+│   Detects: Diamond bullets
+│   Word Equivalent: ◆ (black diamond)
+│   Example: "◆ Diamond tier", "◇ Standard tier"
+│   Confidence: 95%
+
+├── Pattern: ^\s*[◉◎]\s+(.+)$
+│   Detects: Bullseye/target bullets
+│   Word Equivalent: ◉ (fisheye) or ◎ (bullseye)
+│   Example: "◉ Main goal", "◎ Secondary goal"
+│   Confidence: 90%
+
+├── Pattern: ^\s*[▸▹►]\s+(.+)$
+│   Detects: Triangle/pointer bullets
+│   Word Equivalent: ► (black right-pointing pointer)
+│   Example: "▸ Click here", "► More info"
+│   Confidence: 95%
+
+├── Pattern: ^\s*[◂◃◄]\s+(.+)$
+│   Detects: Left-pointing triangle bullets
+│   Word Equivalent: ◄ (black left-pointing pointer)
+│   Example: "◂ Previous", "◄ Back"
+│   Confidence: 95%
+
+--- MULTI-CHARACTER/CUSTOM BULLETS ---
+
+├── Pattern: ^\s*[⦿]\s+(.+)$
+│   Detects: Circled bullet (U+29BF)
+│   Word Equivalent: ⦿ (circled bullet) or ● (black circle)
+│   Example: "⦿ Important notice"
+│   Confidence: 90%
+
+├── Pattern: ^\s*[⁍]\s+(.+)$
+│   Detects: Triangular bullet (U+204D)
+│   Word Equivalent: ► (black right-pointing pointer)
+│   Example: "⁍ Next item"
+│   Confidence: 85%
+
+--- BULLET WITH SPACING VARIATIONS ---
+
+├── Pattern: ^\s*([•○●▪■□◆◇→➔➜➤➢-–—*⁎⁑※✱✲✳✴☐☑✓✔✗✘⓿-⓽❶-❿➀-➉✦✧★☆♥♡◉◎▸▹►◂◃◄⦿⁍])\s{1,3}(.+)$
+│   Detects: Any bullet with 1-3 spaces after
+│   Word Equivalent: Based on bullet character
+│   Example: "•  Item with extra spaces"
+│   Confidence: 100%
+
+└── Pattern: ^\s*([•○●▪■□◆◇→➔➜➤➢-–—*⁎⁑※✱✲✳✴☐☑✓✔✗✘⓿-⓽❶-❿➀-➉✦✧★☆♥♡◉◎▸▹►◂◃◄⦿⁍])\t+(.+)$
+    Detects: Any bullet with tabs after
+    Word Equivalent: Based on bullet character
+    Example: "•	Item with tab"
+    Confidence: 100%
+
+
+================================================================================
+CATEGORY: NUMBERED_LIST (Ordered Lists)
+================================================================================
+Total Patterns: 7
+Confidence: 95%
+
+├── Pattern: ^(\d+[\.)]\s+.+)$
+│   Detects: Numeric with period or parenthesis
+│   Example: "1. First item" or "1) First item"
+│   Confidence: 95%
+
+├── Pattern: ^([a-z][\.)]\s+.+)$
+│   Detects: Lowercase letter lists
+│   Example: "a. Sub-item" or "a) Sub-item"
+│   Confidence: 95%
+
+├── Pattern: ^([ivxlcdm]+[\.)]\s+.+)$ [IGNORECASE]
+│   Detects: Roman numeral lists
+│   Example: "i. First", "iv. Fourth"
+│   Confidence: 95%
+
+├── Pattern: ^\(\d+\)\s+.+$
+│   Detects: Parenthesized numbers
+│   Example: "(1) First item"
+│   Confidence: 95%
+
+├── Pattern: ^\([a-z]\)\s+.+$
+│   Detects: Parenthesized letters
+│   Example: "(a) Sub-item"
+│   Confidence: 95%
+
+├── Pattern: ^[A-Z][\.)]\s+.+$
+│   Detects: Uppercase letter lists
+│   Example: "A. Major point"
+│   Confidence: 95%
+
+└── Pattern: ^\d+\)\s+.+$
+    Detects: Number with closing parenthesis only
+    Example: "1) First item"
+    Confidence: 95%
+
+
+================================================================================
+CATEGORY: TABLE_MARKER (Table Boundaries)
+================================================================================
+Total Patterns: 5
+Confidence: 100%
+
+├── Pattern: ^\[TABLE\s*START\] [IGNORECASE]
+│   Detects: Table start marker
+│   Example: "[TABLE START]"
+│   Confidence: 100%
+
+├── Pattern: ^\[TABLE\s*END\] [IGNORECASE]
+│   Detects: Table end marker
+│   Example: "[TABLE END]"
+│   Confidence: 100%
+
+├── Pattern: ^Table\s+\d+ [IGNORECASE]
+│   Detects: Table captions
+│   Example: "Table 1: Data Summary"
+│   Confidence: 100%
+
+├── Pattern: ^TABLE\s+\d+
+│   Detects: ALL CAPS table captions
+│   Example: "TABLE 3: RESULTS"
+│   Confidence: 100%
+
+└── Pattern: ^Tabel\s+\d+ [IGNORECASE]
+    Detects: Common typo "Tabel"
+    Example: "Tabel 1: Data"
+    Confidence: 100%
+
+
+================================================================================
+CATEGORY: TABLE_ROW (Table Content)
+================================================================================
+Total Patterns: 2
+Confidence: 100%
+
+├── Pattern: ^\|(.+\|)+$
+│   Detects: Markdown table data rows
+│   Example: "| Header 1 | Header 2 | Header 3 |"
+│   Confidence: 100%
+
+└── Pattern: ^\|[\s\-:]+\|$
+    Detects: Markdown table separator rows
+    Example: "|---|---|---|"
+    Confidence: 100%
+
+
+================================================================================
+CATEGORY: TABLE_SEPARATOR (Markdown Table Dividers)
+================================================================================
+Total Patterns: 2
+Confidence: 100%
+
+├── Pattern: ^\|[\s\-:]+\|[\s\-:]+.*\|$
+│   Detects: Multi-column separators with alignment
+│   Example: "| :--- | :---: | ---: |"
+│   Confidence: 100%
+
+└── Pattern: ^[\-\|:\s]+$
+    Detects: Pure separator lines
+    Example: "|----|----|"
+    Confidence: 100%
+
+
+================================================================================
+CATEGORY: DEFINITION (Key Terms & Definitions)
+================================================================================
+Total Patterns: 1 (with 250+ term keywords)
+Confidence: 90%
+
+└── Pattern: ^(Definition|Objective|Task|Goal|Purpose|Aim|Method|Result|
+             Conclusion|Note|Important|Key Point|Summary|Overview|Background|
+             Context|Example|Theorem|Lemma|Corollary|Proposition|Proof|Remark|
+             Observation|Hypothesis|Assumption|Constraint|Limitation|Scope|
+             Significance|Implication|Application|Contribution|Finding|Evidence|
+             Data|Analysis|Interpretation|Explanation|Description|Specification|
+             Requirement|Criteria|Criterion|Parameter|Variable|Constant|Factor|
+             Element|Component|Aspect|Feature|Property|Characteristic|Attribute|
+             Quality|Measure|Metric|Indicator|Index|Ratio|Rate|Percentage|Value|
+             Score|Level|Degree|Extent|Amount|Quantity|Size|Scale|Range|Interval|
+             Duration|Period|Phase|Stage|Step|Process|Procedure|Protocol|
+             Algorithm|Formula|Equation|Model|Framework|Theory|Concept|Principle|
+             Law|Rule|Guideline|Standard|Norm|Benchmark|Baseline|Reference|Source|
+             Origin|Cause|Effect|Impact|Outcome|Consequence|Benefit|Advantage|
+             Disadvantage|Risk|Challenge|Problem|Issue|Question|Answer|Solution|
+             Strategy|Approach|Technique|Tool|Instrument|Device|System|Structure|
+             Organization|Classification|Category|Type|Kind|Class|Group|Set|
+             Collection|Series|Sequence|Order|Pattern|Trend|Distribution|
+             Correlation|Relationship|Connection|Link|Association|Comparison|
+             Contrast|Difference|Similarity|Analogy|Metaphor|Symbol|Sign|Signal|
+             Indicator|Warning|Caution|Attention|Focus|Priority|Emphasis|
+             Highlight|Point|Argument|Claim|Assertion|Statement|Proposition|
+             Premise|Inference|Deduction|Induction|Generalization|Specialization|
+             Abstraction|Instantiation|Implementation|Execution|Operation|
+             Function|Action|Activity|Task|Job|Work|Effort|Attempt|Trial|
+             Experiment|Test|Evaluation|Assessment|Review|Examination|Inspection|
+             Investigation|Inquiry|Study|Research|Survey|Poll|Interview|
+             Questionnaire|Form|Document|Report|Paper|Article|Book|Chapter|
+             Section|Paragraph|Sentence|Word|Term|Phrase|Expression|Language|
+             Text|Content|Information|Data|Knowledge|Wisdom|Intelligence|
+             Understanding|Comprehension|Interpretation|Meaning|Significance|
+             Importance|Relevance|Value|Worth|Merit|Quality|Standard|Excellence|
+             Performance|Efficiency|Effectiveness|Productivity|Output|Input|
+             Resource|Asset|Capital|Investment|Cost|Expense|Price|Fee|Charge|
+             Payment|Revenue|Income|Profit|Loss|Balance|Budget|Forecast|
+             Projection|Estimate|Calculation|Computation|Measurement|
+             Quantification|Qualification|Certification|Accreditation|Validation|
+             Verification|Confirmation|Approval|Authorization|Permission|License|
+             Right|Privilege|Responsibility|Duty|Obligation|Commitment|Promise|
+             Guarantee|Warranty|Assurance|Insurance|Protection|Security|Safety|
+             Risk|Hazard|Danger|Threat|Vulnerability|Weakness|Strength|
+             Opportunity|Challenge):\s*(.+)?$ [IGNORECASE]
+    Detects: Key term followed by colon and optional definition
+    Example: "Definition: Cloud computing refers to..."
+    Example: "Objective: To analyze market trends"
+    Example: "Method: Qualitative research approach"
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: FIGURE (Image/Diagram Captions)
+================================================================================
+Total Patterns: 7
+Confidence: 95%
+
+├── Pattern: ^Figure\s+\d+ [IGNORECASE]
+│   Detects: Figure captions
+│   Example: "Figure 1: System Architecture"
+│   Confidence: 95%
+
+├── Pattern: ^Fig\.\s*\d+ [IGNORECASE]
+│   Detects: Abbreviated figure captions
+│   Example: "Fig. 2: Data Flow"
+│   Confidence: 95%
+
+├── Pattern: ^Image\s+\d+ [IGNORECASE]
+│   Detects: Image labels
+│   Example: "Image 1: Screenshot"
+│   Confidence: 95%
+
+├── Pattern: ^Diagram\s+\d+ [IGNORECASE]
+│   Detects: Diagram captions
+│   Example: "Diagram 3: Process Flow"
+│   Confidence: 95%
+
+├── Pattern: ^Chart\s+\d+ [IGNORECASE]
+│   Detects: Chart labels
+│   Example: "Chart 1: Revenue Growth"
+│   Confidence: 95%
+
+├── Pattern: ^Graph\s+\d+ [IGNORECASE]
+│   Detects: Graph captions
+│   Example: "Graph 2: Performance Metrics"
+│   Confidence: 95%
+
+└── Pattern: ^Illustration\s+\d+ [IGNORECASE]
+    Detects: Illustration captions
+    Example: "Illustration 1: Concept Design"
+    Confidence: 95%
+
+
+================================================================================
+CATEGORY: EQUATION (Mathematical Equations)
+================================================================================
+Total Patterns: 3
+Confidence: 95%
+
+├── Pattern: ^Equation\s+\d+ [IGNORECASE]
+│   Detects: Equation labels
+│   Example: "Equation 1: E = mc²"
+│   Confidence: 95%
+
+├── Pattern: ^Eq\.\s*\d+ [IGNORECASE]
+│   Detects: Abbreviated equation labels
+│   Example: "Eq. 3"
+│   Confidence: 95%
+
+└── Pattern: ^\(\d+\)$
+    Detects: Standalone equation numbers
+    Example: "(1)"
+    Confidence: 95%
+
+
+================================================================================
+CATEGORY: QUOTE (Block Quotes)
+================================================================================
+Total Patterns: 2
+Confidence: 90%
+
+├── Pattern: ^["\"].*["\"]$
+│   Detects: Fully quoted lines
+│   Example: "\"To be or not to be\""
+│   Confidence: 90%
+
+└── Pattern: ^>\s+.+$
+    Detects: Markdown blockquotes
+    Example: "> This is a quote"
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: CODE (Code Blocks)
+================================================================================
+Total Patterns: 3
+Confidence: 80-95%
+
+├── Pattern: ^```
+│   Detects: Markdown code fence start/end
+│   Example: "```python"
+│   Confidence: 95%
+
+├── Pattern: ^~~~
+│   Detects: Alternative code fence
+│   Example: "~~~javascript"
+│   Confidence: 95%
+
+└── Pattern: ^\t{2,}.+$
+    Detects: Heavily indented text (code-like)
+    Example: "		return value;"
+    Confidence: 80%
+
+
+================================================================================
+CATEGORY: SECTION_KEYWORDS (Special Section Detection)
+================================================================================
+Total Patterns: 8
+Confidence: 95%
+
+├── Pattern: section_abstract
+│   Regex: ^(abstract|executive\s+summary)$ [IGNORECASE]
+│   Detects: Abstract sections
+│   Example: "Abstract", "Executive Summary"
+
+├── Pattern: section_intro
+│   Regex: ^(introduction|background|overview|motivation|context)$ [IGNORECASE]
+│   Detects: Introduction sections
+│   Example: "Introduction", "Background"
+
+├── Pattern: section_methods
+│   Regex: ^(method|methodology|approach|procedure|materials|design|implementation)s?$ [IGNORECASE]
+│   Detects: Methodology sections
+│   Example: "Methods", "Methodology"
+
+├── Pattern: section_results
+│   Regex: ^(results?|findings?|outcomes?|data|observations?)$ [IGNORECASE]
+│   Detects: Results sections
+│   Example: "Results", "Findings"
+
+├── Pattern: section_discussion
+│   Regex: ^(discussion|analysis|interpretation|evaluation)$ [IGNORECASE]
+│   Detects: Discussion sections
+│   Example: "Discussion", "Analysis"
+
+├── Pattern: section_conclusion
+│   Regex: ^(conclusions?|summary|final\s+remarks|future\s+work|recommendations?)$ [IGNORECASE]
+│   Detects: Conclusion sections
+│   Example: "Conclusion", "Future Work"
+
+├── Pattern: section_references
+│   Regex: ^(references|bibliography|works\s+cited|citations|sources)$ [IGNORECASE]
+│   Detects: Reference sections
+│   Example: "References", "Bibliography"
+
+└── Pattern: section_appendix
+    Regex: ^(appendix|appendices|supplementary|annexure)$ [IGNORECASE]
+    Detects: Appendix sections
+    Example: "Appendix", "Supplementary"
+
+
+================================================================================
+                            PATTERN SUMMARY
+================================================================================
+
+| Category          | Pattern Count | Confidence Range |
+|-------------------|---------------|------------------|
+| Heading 1         | 12 patterns   | 80-95%           |
+| Heading 2         | 6 patterns    | 75-90%           |
+| Heading 3         | 6 patterns    | 85%              |
+| References        | 10 patterns   | 90%              |
+| Bullet Lists      | 4 patterns    | 95%              |
+| Numbered Lists    | 7 patterns    | 95%              |
+| Table Markers     | 5 patterns    | 100%             |
+| Table Rows        | 2 patterns    | 100%             |
+| Table Separators  | 2 patterns    | 100%             |
+| Definitions       | 1 pattern     | 90%              |
+| Figures           | 7 patterns    | 95%              |
+| Equations         | 3 patterns    | 95%              |
+| Quotes            | 2 patterns    | 90%              |
+| Code              | 3 patterns    | 80-95%           |
+| Section Keywords  | 8 patterns    | 95%              |
+| Inline Formatting | 3 patterns    | 85-90%           |
+| Page Metadata     | 4 patterns    | 85-95%           |
+| Academic Metadata | 4 patterns    | 75-95%           |
+| Math Expression   | 5 patterns    | 75-95%           |
+| Footnote/Endnote  | 3 patterns    | 90-95%           |
+|-------------------|---------------|------------------|
+| TOTAL             | 97+ patterns  | 75-100%          |
+
+================================================================================
+                    NEW PATTERNS (December 30, 2025)
+================================================================================
+
+
+================================================================================
+CATEGORY: INLINE_FORMATTING (Bold/Italic/Bold-Italic)
+================================================================================
+Total Patterns: 3
+Confidence: 85-90%
+
+├── Pattern: \*\*\*(.+?)\*\*\*|___(.+?)___
+│   Detects: Bold+Italic text (triple asterisk/underscore)
+│   Example: "***Very Important*** concept"
+│   Confidence: 90%
+
+├── Pattern: \*\*(.+?)\*\*|__(.+?)__
+│   Detects: Bold text (double asterisk/underscore)
+│   Example: "**Important** note", "__Critical__ point"
+│   Confidence: 85%
+
+└── Pattern: (?<!\*)\*([^*\n]+?)\*(?!\*)|(?<!_)_([^_\n]+?)_(?!_)
+    Detects: Italic text (single asterisk/underscore, non-greedy)
+    Example: "*Emphasized* term", "_Optional_ step"
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: PAGE_METADATA (Headers/Footers/Page Numbers)
+================================================================================
+Total Patterns: 4
+Confidence: 85-95%
+
+├── Pattern: ^\s*(?:page|p|pg)\.?\s*\d+\s*(?:of\s*\d+)?\s*$ [IGNORECASE]
+│   Detects: Page numbers in various formats
+│   Example: "Page 1", "p. 23", "Page 5 of 10"
+│   Confidence: 95%
+
+├── Pattern: ^\s*(?:header|footer|running head):?\s*.{1,50}$ [IGNORECASE]
+│   Detects: Header/footer labels
+│   Example: "Header: Chapter Title", "Running head: SHORT TITLE"
+│   Confidence: 90%
+
+├── Pattern: ^\s*(?:confidential|draft|version\s*\d+|date:|©|copyright)\b.*$ [IGNORECASE]
+│   Detects: Document status indicators
+│   Example: "DRAFT VERSION 0.5", "© 2025 Author Name", "CONFIDENTIAL"
+│   Confidence: 85%
+
+└── Pattern: ^\s*-\s*\d+\s*-\s*$
+    Detects: Centered page numbers with dashes
+    Example: "- 1 -", "- 42 -"
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: ACADEMIC_METADATA (Title/Author/Affiliation)
+================================================================================
+Total Patterns: 4
+Confidence: 75-95%
+
+├── Pattern: ^\s*(?:by|authors?:)\s+([A-Z][a-z]+(?:\s+[A-Z]\.)*...)*$ [IGNORECASE]
+│   Detects: Author names with "by" or "author(s):" prefix
+│   Example: "by John A. Smith and Jane B. Doe"
+│   Confidence: 80%
+
+├── Pattern: ^\s*(?:department|school|college|university|...)\\s+of\\s+.+$ [IGNORECASE]
+│   Detects: Academic affiliations
+│   Example: "Department of Computer Science", "University of California"
+│   Confidence: 75%
+
+├── Pattern: ^\s*(?:email|e-mail|correspondence\s+to|contact):?\s*\S+@\S+\.\S+\s*$ [IGNORECASE]
+│   Detects: Email addresses with label
+│   Example: "Email: researcher@university.edu"
+│   Confidence: 95%
+
+└── Pattern: ^\s*(?:submitted\s+to|prepared\s+for|in\s+partial\s+fulfillment)\s+.+$ [IGNORECASE]
+    Detects: Submission/dedication lines
+    Example: "Submitted to the Department of Physics"
+    Confidence: 80%
+
+
+================================================================================
+CATEGORY: MATH_EXPRESSION (Mathematical Expressions)
+================================================================================
+Total Patterns: 5
+Confidence: 75-95%
+
+├── Pattern: ^\$\$[^$]+\$\$$
+│   Detects: LaTeX display math (double dollar signs)
+│   Example: "$$ \int_a^b f(x) dx $$"
+│   Confidence: 95%
+
+├── Pattern: \$[^$\n]+\$
+│   Detects: LaTeX inline math (single dollar signs)
+│   Example: "$E = mc^2$"
+│   Confidence: 85%
+
+├── Pattern: ^\\[.*\\]$
+│   Detects: LaTeX display math (bracket notation)
+│   Example: "\[x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}\]"
+│   Confidence: 95%
+
+├── Pattern: \\(.*\\)
+│   Detects: LaTeX inline math (parenthesis notation)
+│   Example: "\(P(A|B) = P(B|A)P(A)/P(B)\)"
+│   Confidence: 85%
+
+└── Pattern: ^\s*[A-Za-z]\s*[=<>≤≥≠≈]\s*.+$
+    Detects: Simple equations with variables
+    Example: "x = 5", "α + β = γ"
+    Confidence: 75%
+
+
+================================================================================
+CATEGORY: FOOTNOTE_ENDNOTE (Footnotes and Endnotes)
+================================================================================
+Total Patterns: 3
+Confidence: 90-95%
+
+├── Pattern: ^\s*(?:endnotes?|footnotes?)\s*$ [IGNORECASE]
+│   Detects: Footnote/endnote section headers
+│   Example: "Footnotes", "ENDNOTES"
+│   Confidence: 95%
+
+├── Pattern: ^\s*(\d{1,3}|[a-z]|\*{1,3})\s*[\.)\s+.{10,}$
+│   Detects: Footnote entries (numbered, lettered, or asterisk)
+│   Example: "1. This is a footnote", "a) Additional note"
+│   Confidence: 90%
+
+└── Pattern: ^\s*\[\d+\]\s+.{10,}$
+    Detects: Bracketed footnote entries
+    Example: "[1] Smith et al. noted that..."
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: HEADING_HIERARCHY (Markdown-Style Headings)
+================================================================================
+Total Patterns: 3
+Confidence: 95%
+
+├── Pattern: ^#{1,6}\s+.+$
+│   Detects: Markdown heading with # symbols
+│   Example: "# Chapter One", "### Section 1.2.3"
+│   Confidence: 95%
+
+├── Pattern: ^=+$
+│   Detects: Setext H1 underline (equals signs)
+│   Example: "================"
+│   Confidence: 95%
+
+└── Pattern: ^-+$
+    Detects: Setext H2 underline (dashes)
+    Example: "----------------"
+    Confidence: 95%
+
+
+================================================================================
+CATEGORY: ACADEMIC_TABLE (Table Detection)
+================================================================================
+Total Patterns: 4
+Confidence: 85-95%
+
+├── Pattern: ^Table\s+\d+[\.:]?\s*.* [IGNORECASE]
+│   Detects: Table captions with number
+│   Example: "Table 1: Demographic Data"
+│   Confidence: 95%
+
+├── Pattern: ^\|\s*\*\*.+\*\*.*\|
+│   Detects: Markdown table header row
+│   Example: "| **Name** | **Age** | **Location** |"
+│   Confidence: 90%
+
+├── Pattern: ^\|[\s\-:]+\|
+│   Detects: Markdown table separator row
+│   Example: "|---|:---:|---:|"
+│   Confidence: 95%
+
+└── Pattern: ^\|.+\|$
+    Detects: Markdown table data row
+    Example: "| John Smith | 45 | New York |"
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: LIST_NESTED (Nested and Checkbox Lists)
+================================================================================
+Total Patterns: 4
+Confidence: 85-95%
+
+├── Pattern: ^(\s{2,})[•\-\*]\s+.+$
+│   Detects: Indented bullet points (nested)
+│   Example: "    • Sub-item under main point"
+│   Confidence: 90%
+
+├── Pattern: ^(\s{2,})\d+[\.\)]\s+.+$
+│   Detects: Indented numbered items (nested)
+│   Example: "    1. First sub-item"
+│   Confidence: 90%
+
+├── Pattern: ^\s*[□☐☑✓✗]\s+.+$
+│   Detects: Checkbox items with symbols
+│   Example: "☑ Task completed", "☐ Pending item"
+│   Confidence: 95%
+
+└── Pattern: ^\s*\[\s?[xX ]?\s?\]\s+.+$
+    Detects: Markdown checkbox syntax
+    Example: "[x] Done", "[ ] Not done"
+    Confidence: 95%
+
+
+================================================================================
+CATEGORY: FIGURE_EQUATION (Figure & Equation Captions)
+================================================================================
+Total Patterns: 4
+Confidence: 90-95%
+
+├── Pattern: ^Figure\s+\d+[\.:]?\s*.* [IGNORECASE]
+│   Detects: Figure captions with number
+│   Example: "Figure 3: System Architecture"
+│   Confidence: 95%
+
+├── Pattern: ^Equation\s+\d+[\.:]?\s*.* [IGNORECASE]
+│   Detects: Equation labels with number
+│   Example: "Equation 2: Energy Conservation"
+│   Confidence: 95%
+
+├── Pattern: ^\([\d\.]+\)$
+│   Detects: Equation number reference (standalone)
+│   Example: "(1.5)", "(2)"
+│   Confidence: 90%
+
+└── Pattern: ^Eq\.\s*\(?\d+\)?[\.:]?\s*.* [IGNORECASE]
+    Detects: Abbreviated equation reference
+    Example: "Eq. (3): Maxwell's equations"
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: CITATION_INLINE (In-Text Citations)
+================================================================================
+Total Patterns: 4
+Confidence: 85-95%
+
+├── Pattern: \([A-Z][a-z]+(?:\s+(?:et\s+al\.?|&|and)\s+[A-Z][a-z]+)?,?\s*\d{4}(?:,\s*p\.\s*\d+)?\)
+│   Detects: APA-style parenthetical citation
+│   Example: "(Smith, 2020)", "(Jones et al., 2019, p. 45)"
+│   Confidence: 95%
+
+├── Pattern: \[[^\]]*\d{4}[^\]]*\]
+│   Detects: Bracketed citation with year
+│   Example: "[Smith 2020]", "[See Johnson, 2018]"
+│   Confidence: 90%
+
+├── Pattern: \[\d+(?:,\s*\d+)*\]
+│   Detects: Numeric citation (IEEE style)
+│   Example: "[1]", "[3, 5, 7]"
+│   Confidence: 95%
+
+└── Pattern: \(\d{4}\)
+    Detects: Year-only citation
+    Example: "(2020)", "(1998)"
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: RUNNING_HEADER (Header/Footer Content)
+================================================================================
+Total Patterns: 3
+Confidence: 80-90%
+
+├── Pattern: ^Running\s+head:?\s*.+ [IGNORECASE]
+│   Detects: APA running head
+│   Example: "Running head: EFFECTS OF TECHNOLOGY"
+│   Confidence: 90%
+
+├── Pattern: ^[A-Z][A-Z\s]+\s+\d+$
+│   Detects: Header with page number (all caps title + number)
+│   Example: "RESEARCH METHODS 15"
+│   Confidence: 80%
+
+└── Pattern: ^\d+\s+[A-Z][A-Z\s]+$
+    Detects: Page number with header (number + title)
+    Example: "23 LITERATURE REVIEW"
+    Confidence: 80%
+
+
+================================================================================
+CATEGORY: APPENDIX_FORMAT (Appendix Sections)
+================================================================================
+Total Patterns: 3
+Confidence: 90-95%
+
+├── Pattern: ^Appendix\s+[A-Z][\.:]?\s*.* [IGNORECASE]
+│   Detects: Appendix with letter designation
+│   Example: "Appendix A: Survey Instrument"
+│   Confidence: 95%
+
+├── Pattern: ^Appendix\s+\d+[\.:]?\s*.* [IGNORECASE]
+│   Detects: Appendix with number designation
+│   Example: "Appendix 1: Data Tables"
+│   Confidence: 95%
+
+└── Pattern: ^Annex\s+[A-Z\d]+[\.:]?\s*.* [IGNORECASE]
+    Detects: Annex section (alternative naming)
+    Example: "Annex B: Supplementary Materials"
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: BLOCK_QUOTE (Block Quotations)
+================================================================================
+Total Patterns: 3
+Confidence: 85-95%
+
+├── Pattern: ^>\s+.+$
+│   Detects: Markdown block quote
+│   Example: "> This is a quoted passage from the source."
+│   Confidence: 95%
+
+├── Pattern: ^[""].{40,}[""]
+│   Detects: Long quoted text (40+ characters)
+│   Example: ""The significance of this finding cannot be overstated...""
+│   Confidence: 85%
+
+└── Pattern: ^\s{4,}.{40,}$
+    Detects: Indented block (4+ spaces, 40+ chars)
+    Example: "    This passage represents a key theoretical framework..."
+    Confidence: 80%
+
+
+================================================================================
+CATEGORY: MATH_MODEL (Statistical & Mathematical Notation)
+================================================================================
+Total Patterns: 5
+Confidence: 85-95%
+
+├── Pattern: ^[YŶ]\s*=\s*[αβa-z]\s*[+\-]\s*.+$
+│   Detects: Regression equation format
+│   Example: "Ŷ = α + β₁X₁ + β₂X₂ + ε"
+│   Confidence: 90%
+
+├── Pattern: [Σ∑∫∏]\s*.+$
+│   Detects: Summation/integral notation
+│   Example: "Σ(xᵢ - x̄)² / (n-1)"
+│   Confidence: 90%
+
+├── Pattern: H[₀₁0-9]:\s*.+
+│   Detects: Hypothesis notation
+│   Example: "H₀: μ₁ = μ₂", "H1: There is a significant difference"
+│   Confidence: 95%
+
+├── Pattern: [μσρ][₁₂]?\s*[=<>≠]\s*.+
+│   Detects: Greek letter statistical notation
+│   Example: "μ = 50", "σ = 12.5", "ρ = 0.85"
+│   Confidence: 85%
+
+└── Pattern: [αβγδεζηθλπφψω]\s*[=<>≈]\s*.+
+    Detects: Greek variables in equations
+    Example: "α = 0.05", "β = 0.80"
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: TEXT_EMPHASIS (Bold, Italic, Strikethrough)
+================================================================================
+Total Patterns: 4
+Confidence: 90-95%
+
+├── Pattern: \*\*\*.+?\*\*\*
+│   Detects: Bold+Italic (triple asterisk)
+│   Example: "***critically important***"
+│   Confidence: 95%
+
+├── Pattern: \*\*.+?\*\*
+│   Detects: Bold text (double asterisk)
+│   Example: "**significant result**"
+│   Confidence: 95%
+
+├── Pattern: (?<!\*)\*[^*]+\*(?!\*)
+│   Detects: Italic text (single asterisk)
+│   Example: "*emphasis on this term*"
+│   Confidence: 90%
+
+└── Pattern: ~~.+?~~
+    Detects: Strikethrough text
+    Example: "~~deleted content~~"
+    Confidence: 95%
+
+
+================================================================================
+CATEGORY: REFERENCE_APA (APA Reference Formats)
+================================================================================
+Total Patterns: 5
+Confidence: 85-95%
+
+├── Pattern: ^[A-Z][a-z]+,\s+[A-Z]\.\s*(?:[A-Z]\.\s*)?\(\d{4}\)\..+
+│   Detects: Standard APA reference (single author)
+│   Example: "Smith, J. A. (2020). Title of the work."
+│   Confidence: 95%
+
+├── Pattern: ^[A-Z][a-z]+,\s+[A-Z]\.,?\s*(?:&|and)\s+[A-Z][a-z]+,\s+[A-Z]\.\s*\(\d{4}\)
+│   Detects: APA reference (two authors)
+│   Example: "Smith, J., & Jones, M. (2019). Joint study."
+│   Confidence: 95%
+
+├── Pattern: ^[A-Z][a-z]+(?:,\s+[A-Z]\.)+(?:,\s*et\s+al\.)?\s*\(\d{4}\)
+│   Detects: APA reference with et al.
+│   Example: "Johnson, K. L., et al. (2021). Collaborative research."
+│   Confidence: 90%
+
+├── Pattern: Retrieved\s+from\s+https?://[^\s]+
+│   Detects: APA URL retrieval statement
+│   Example: "Retrieved from https://doi.org/10.1000/xyz"
+│   Confidence: 95%
+
+└── Pattern: https?://doi\.org/[^\s]+
+    Detects: DOI link in reference
+    Example: "https://doi.org/10.1037/a0012345"
+    Confidence: 95%
+
+├── Pattern: ^([A-Z][A-Za-z\s]+(?:,\s*[A-Z]\.[A-Z]?\.?(?:\s*&\s*[A-Z][A-Za-z\s]+,\s*[A-Z]\.[A-Z]?\.?)*)?)\s*\((\d{4}(?:/\d{4})?)\)\.?\s*(.+)$
+    Detects: Unformatted APA references (no hanging indent, inconsistent punctuation)
+    Example: "Abel, J. R., & Moore, R. (2025). The professional bridge..."
+    Confidence: 90%
+
+├── Pattern: ^[\w\s\.\-&]+\s*\(\d{4}(?:/\d{4})?\).*$
+    Detects: Organizational/Institutional references
+    Example: "UNESCO (2023). Education under attack..."
+    Confidence: 90%
+
+├── Pattern: ^(?:Decree|Law|Order|Decision|Arrete)\s+No\.?.*$ [IGNORECASE]
+    Detects: Legal citations (Decrees, Laws)
+    Example: "Decree No. 2005/140 of 25 April 2005..."
+    Confidence: 90%
+
+# Correction function for APA reference formatting
+def format_apa_references(text):
+    """
+    Fixes common APA reference formatting issues:
+    1. Adds hanging indent
+    2. Ensures consistent punctuation
+    3. Italicizes journal/book titles
+    4. Sorts alphabetically
+    5. Adds missing information
+    """
+    references = text.strip().split('\n')
+    formatted_refs = []
+    
+    for ref in references:
+        # Fix capitalization in titles
+        ref = re.sub(r'([A-Z][a-z]+)\s+([A-Z][a-z]+):', r'\1 \2:', ref)
+        
+        # Ensure period after year
+        ref = re.sub(r'(\(\d{4}(?:/\d{4})?\))\s*([A-Z])', r'\1. \2', ref)
+        
+        # Fix journal formatting
+        ref = re.sub(r'(\bJournal\s+of\s+[A-Z][a-z]+\s+[A-Z][a-z]+)', r'*\1*', ref)
+        
+        # Add hanging indent placeholder
+        if len(ref) > 80:
+            ref = ref[:80] + '\n    ' + ref[80:]
+        
+        formatted_refs.append(ref)
+    
+    # Sort alphabetically by first author/organization
+    formatted_refs.sort(key=lambda x: re.sub(r'^([A-Z][A-Za-z]+).*', r'\1', x).lower())
+    
+    return '\n'.join(formatted_refs)
+
+
+================================================================================
+CATEGORY: TOC_ENTRY (Table of Contents Entries)
+================================================================================
+Total Patterns: 3
+Confidence: 85-95%
+
+├── Pattern: ^.+\.{3,}\s*\d+$
+│   Detects: TOC with dot leaders and page number
+│   Example: "Introduction ............................... 1"
+│   Confidence: 95%
+
+├── Pattern: ^.+\t+\d+$
+│   Detects: TOC with tab and page number
+│   Example: "Chapter 1: Overview    5"
+│   Confidence: 90%
+
+└── Pattern: ^(\d+\.)+\s+.+\s+\d+$
+    Detects: Numbered TOC entry with page
+    Example: "1.2.3 Methodology   45"
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: FOOTNOTE_MARKER (Footnote References)
+================================================================================
+Total Patterns: 3
+Confidence: 90-95%
+
+├── Pattern: \[\d+\]
+│   Detects: Bracketed footnote marker
+│   Example: "[1]", "[23]"
+│   Confidence: 95%
+
+├── Pattern: \^[\d]+
+│   Detects: Superscript-style footnote
+│   Example: "^1", "^15"
+│   Confidence: 90%
+
+└── Pattern: \*{1,3}(?!\s*\*)
+    Detects: Asterisk footnote marker
+    Example: "*", "**", "***"
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: ABBREVIATION (Abbreviation Definitions)
+================================================================================
+Total Patterns: 3
+Confidence: 85-95%
+
+├── Pattern: ^[A-Z]{2,}\s*[-–:=]\s*.+$
+│   Detects: Abbreviation with definition
+│   Example: "API - Application Programming Interface"
+│   Confidence: 95%
+
+├── Pattern: \([A-Z]{2,}\)
+│   Detects: Abbreviation in parentheses
+│   Example: "(WHO)", "(UNESCO)"
+│   Confidence: 90%
+
+└── Pattern: ^[A-Z]{2,10}$
+    Detects: Standalone abbreviation
+    Example: "UNESCO", "WHO", "API"
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: CAPTION_FORMAT (Figure/Table Captions)
+================================================================================
+Total Patterns: 4
+Confidence: 90-95%
+
+├── Pattern: ^(Figure|Fig\.?)\s+\d+[\.:]?\s*.+ [IGNORECASE]
+│   Detects: Figure caption
+│   Example: "Fig. 1: Network Architecture"
+│   Confidence: 95%
+
+├── Pattern: ^(Table|Tbl\.?)\s+\d+[\.:]?\s*.+ [IGNORECASE]
+│   Detects: Table caption
+│   Example: "Table 2. Demographic Characteristics"
+│   Confidence: 95%
+
+├── Pattern: ^Note\.\s+.+ [IGNORECASE]
+│   Detects: Note under table/figure
+│   Example: "Note. Values in parentheses are standard deviations."
+│   Confidence: 90%
+
+└── Pattern: ^Source:\s*.+ [IGNORECASE]
+    Detects: Source attribution
+    Example: "Source: Census Bureau, 2020"
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: PAGE_BREAK (Page Break Markers)
+================================================================================
+Total Patterns: 3
+Confidence: 90-100%
+
+├── Pattern: ^-{3,}$
+│   Detects: Horizontal rule (dashes)
+│   Example: "---"
+│   Confidence: 90%
+
+├── Pattern: ^\*{3,}$
+│   Detects: Horizontal rule (asterisks)
+│   Example: "***"
+│   Confidence: 90%
+
+└── Pattern: ^_{3,}$
+    Detects: Horizontal rule (underscores)
+    Example: "___"
+    Confidence: 90%
+
+
+================================================================================
+CATEGORY: STATISTICAL_RESULT (Statistical Notation)
+================================================================================
+Total Patterns: 5
+Confidence: 90-95%
+
+├── Pattern: [FtrzχZ]\s*\(?\d*,?\s*\d*\)?\s*=\s*[\d\.]+
+│   Detects: Test statistics (F, t, r, z, chi)
+│   Example: "F(2, 45) = 12.34", "t(99) = 2.45"
+│   Confidence: 95%
+
+├── Pattern: p\s*[<>=]\s*[\d\.]+
+│   Detects: P-value notation
+│   Example: "p < .001", "p = 0.05"
+│   Confidence: 95%
+
+├── Pattern: η[²2p]?\s*=\s*[\d\.]+
+│   Detects: Eta-squared effect size
+│   Example: "η² = 0.15", "ηp² = 0.23"
+│   Confidence: 95%
+
+├── Pattern: d\s*=\s*[\d\.]+
+│   Detects: Cohen's d effect size
+│   Example: "d = 0.80"
+│   Confidence: 90%
+
+└── Pattern: (?:M|SD|SE)\s*=\s*[\d\.]+
+    Detects: Mean, SD, SE values
+    Example: "M = 4.5", "SD = 1.2", "SE = 0.15"
+    Confidence: 95%
+
+
+================================================================================
+CATEGORY: QUESTIONNAIRE (Survey/Questionnaire Items)
+================================================================================
+Total Patterns: 4
+Confidence: 85-95%
+
+├── Pattern: ^Q\d+[\.:]\s*.+
+│   Detects: Numbered question items
+│   Example: "Q1: How satisfied are you with..."
+│   Confidence: 95%
+
+├── Pattern: ^\d+\.\s*.+\?$
+│   Detects: Numbered question ending in ?
+│   Example: "1. What is your primary occupation?"
+│   Confidence: 90%
+
+├── Pattern: ^\s*[①②③④⑤⑥⑦]\s*.+$
+│   Detects: Circled number options
+│   Example: "① Strongly Disagree  ⑤ Strongly Agree"
+│   Confidence: 90%
+
+└── Pattern: ^\s*(?:Strongly\s+)?(?:Agree|Disagree|Neutral|Satisfied|Dissatisfied)
+    Detects: Likert scale labels
+    Example: "Strongly Agree", "Neutral", "Disagree"
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: GLOSSARY_ENTRY (Glossary Terms)
+================================================================================
+Total Patterns: 3
+Confidence: 85-95%
+
+├── Pattern: ^([A-Z][a-z]+(?:\s+[A-Za-z]+)*)\s*[-–:]\s*.+$
+│   Detects: Term with definition
+│   Example: "Algorithm – A step-by-step procedure..."
+│   Confidence: 90%
+
+├── Pattern: ^(\*\*[A-Za-z\s]+\*\*)\s*[-–:]\s*.+$
+│   Detects: Bold term with definition (markdown)
+│   Example: "**Variable** – A symbol representing a value..."
+│   Confidence: 95%
+
+└── Pattern: ^([A-Za-z\s]+)\s+\[.+\]\s*.+$
+    Detects: Term with pronunciation/origin
+    Example: "Algorithm [AL-go-rith-um] A procedure..."
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: CROSS_REFERENCE (Internal References)
+================================================================================
+Total Patterns: 4
+Confidence: 85-95%
+
+├── Pattern: (?:see|refer\s+to|as\s+shown\s+in)\s+(?:Figure|Table|Section|Chapter)\s+\d+ [IGNORECASE]
+│   Detects: Reference to figures/tables/sections
+│   Example: "see Figure 3", "refer to Table 2"
+│   Confidence: 95%
+
+├── Pattern: (?:Figure|Table|Section|Equation)\s+\d+(?:\.\d+)*\s+(?:shows|presents|illustrates|demonstrates) [IGNORECASE]
+│   Detects: Reference describing content
+│   Example: "Figure 1 shows the trend..."
+│   Confidence: 90%
+
+├── Pattern: \((?:see|cf\.?)\s+(?:Figure|Table|Section)\s+\d+\) [IGNORECASE]
+│   Detects: Parenthetical cross-reference
+│   Example: "(see Figure 4)", "(cf. Table 1)"
+│   Confidence: 95%
+
+└── Pattern: (?:above|below|following|preceding)\s+(?:figure|table|section|chapter) [IGNORECASE]
+    Detects: Relative position references
+    Example: "the following table", "above figure"
+    Confidence: 85%
+
+
+================================================================================
+CATEGORY: ACADEMIC_SECTION_PAGE_BREAKS (Auto Page Break Sections)
+================================================================================
+Total Patterns: 28+
+Confidence: 95-100%
+
+DESCRIPTION: This pattern category identifies specific academic document sections 
+that should automatically start on a new page. Unlike other heading patterns, 
+these trigger automatic page break insertion before the heading.
+
+--- FRONT MATTER SECTIONS (Always get page breaks) ---
+
+├── Pattern: ^#+\s*(ACKNOWLEDGEMENTS?|ACKNOWLEDGMENTS?)\s*$ [IGNORECASE]
+│   Detects: Acknowledgements section (any spelling variant)
+│   Example: "# ACKNOWLEDGEMENTS", "# Acknowledgments"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*DEDICATION\s*$ [IGNORECASE]
+│   Detects: Dedication section
+│   Example: "# DEDICATION", "# Dedication"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*ABSTRACT\s*$ [IGNORECASE]
+│   Detects: Abstract section
+│   Example: "# ABSTRACT", "# Abstract"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*(TABLE\s+OF\s+CONTENTS|CONTENTS)\s*$ [IGNORECASE]
+│   Detects: Table of Contents section
+│   Example: "# TABLE OF CONTENTS", "# Contents"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*LIST\s+OF\s+TABLES\s*$ [IGNORECASE]
+│   Detects: List of Tables section
+│   Example: "# LIST OF TABLES"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*LIST\s+OF\s+FIGURES\s*$ [IGNORECASE]
+│   Detects: List of Figures section
+│   Example: "# LIST OF FIGURES"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*GLOSSARY\s*$ [IGNORECASE]
+│   Detects: Glossary section
+│   Example: "# GLOSSARY", "# Glossary"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*(LIST\s+OF\s+ABBREVIATIONS|ABBREVIATIONS)\s*$ [IGNORECASE]
+│   Detects: Abbreviations section
+│   Example: "# LIST OF ABBREVIATIONS", "# Abbreviations"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*(APPENDICES|APPENDIX)\s*$ [IGNORECASE]
+│   Detects: Appendices/Appendix section
+│   Example: "# APPENDICES", "# APPENDIX"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*REFERENCES?\s*$ [IGNORECASE]
+│   Detects: References section
+│   Example: "# REFERENCES", "# Reference"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+└── Pattern: ^#+\s*BIBLIOGRAPHY\s*$ [IGNORECASE]
+    Detects: Bibliography section
+    Example: "# BIBLIOGRAPHY"
+    Action: Insert page break before heading
+    Confidence: 100%
+
+--- CHAPTER HEADINGS (Always get page breaks) ---
+
+├── Pattern: ^#+\s*CHAPTER\s+(ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN)\s*[:\.]?\s*.*$ [IGNORECASE]
+│   Detects: Chapter with word number
+│   Example: "# CHAPTER ONE", "# CHAPTER THREE: METHODOLOGY"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^CHAPTER\s+(ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN)\s*[:\.]?\s*.*$ [IGNORECASE]
+│   Detects: Chapter with word number (no markdown)
+│   Example: "CHAPTER TWO", "CHAPTER FIVE: RESULTS"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*CHAPTER\s+[1-9][0-9]?\s*[:\.]?\s*.*$ [IGNORECASE]
+│   Detects: Chapter with Arabic number
+│   Example: "# CHAPTER 1", "# CHAPTER 12: CONCLUSION"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^CHAPTER\s+[1-9][0-9]?\s*[:\.]?\s*.*$ [IGNORECASE]
+│   Detects: Chapter with Arabic number (no markdown)
+│   Example: "CHAPTER 3", "CHAPTER 5: DATA ANALYSIS"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+├── Pattern: ^#+\s*CHAPTER\s+[IVXLC]+\s*[:\.]?\s*.*$ [IGNORECASE]
+│   Detects: Chapter with Roman numeral
+│   Example: "# CHAPTER I", "# CHAPTER IV: DISCUSSION"
+│   Action: Insert page break before heading
+│   Confidence: 100%
+
+└── Pattern: ^CHAPTER\s+[IVXLC]+\s*[:\.]?\s*.*$ [IGNORECASE]
+    Detects: Chapter with Roman numeral (no markdown)
+    Example: "CHAPTER II", "CHAPTER VII: RECOMMENDATIONS"
+    Action: Insert page break before heading
+    Confidence: 100%
+
+--- SECTIONS THAT DO NOT GET PAGE BREAKS ---
+
+• Subsections (## 1.1 Background, ### 1.1.1 Details)
+• Regular numbered headings within chapters
+• Figures and tables within chapters
+• Individual appendix items (## Appendix A: Questionnaire)
+
+--- IMPLEMENTATION NOTES ---
+
+1. Detection occurs at analyze_line() stage via should_start_on_new_page() helper
+2. Page break flag is propagated through structuring to WordGenerator
+3. WordGenerator._add_section() checks needs_page_break flag before adding heading
+4. Only level 1 headings (single #) can trigger page breaks
+5. Page breaks are inserted BEFORE the heading, not after
+
+
+================================================================================
+CATEGORY: ACADEMIC_HEADING_CENTRALIZATION (Centered Headings)
+================================================================================
+Total Patterns: Uses same detection as ACADEMIC_SECTION_PAGE_BREAKS
+Confidence: 100%
+
+DESCRIPTION: This pattern category identifies specific academic document sections
+that should be centered on the page rather than left-aligned. Only level 1 
+headings (#) are eligible for centering. All subsections remain left-aligned.
+
+--- HEADINGS TO CENTER ---
+
+├── DEDICATION
+│   Example: "# DEDICATION", "DEDICATION"
+│   Action: Center heading text
+│   Confidence: 100%
+
+├── ACKNOWLEDGEMENTS / ACKNOWLEDGMENTS
+│   Example: "# ACKNOWLEDGEMENTS", "# Acknowledgments"
+│   Action: Center heading text
+│   Confidence: 100%
+
+├── ABSTRACT
+│   Example: "# ABSTRACT", "# Abstract"
+│   Action: Center heading text
+│   Confidence: 100%
+
+├── TABLE OF CONTENTS / CONTENTS
+│   Example: "# TABLE OF CONTENTS", "# Contents"
+│   Action: Center heading text
+│   Confidence: 100%
+
+├── LIST OF TABLES
+│   Example: "# LIST OF TABLES"
+│   Action: Center heading text
+│   Confidence: 100%
+
+├── LIST OF FIGURES
+│   Example: "# LIST OF FIGURES"
+│   Action: Center heading text
+│   Confidence: 100%
+
+├── LIST OF ABBREVIATIONS / ABBREVIATIONS
+│   Example: "# LIST OF ABBREVIATIONS", "# Abbreviations"
+│   Action: Center heading text
+│   Confidence: 100%
+
+├── GLOSSARY
+│   Example: "# GLOSSARY", "# Glossary"
+│   Action: Center heading text
+│   Confidence: 100%
+
+├── APPENDICES / APPENDIX
+│   Example: "# APPENDICES", "# APPENDIX"
+│   Action: Center heading text
+│   Confidence: 100%
+
+├── REFERENCES / BIBLIOGRAPHY
+│   Example: "# REFERENCES", "# BIBLIOGRAPHY"
+│   Action: Center heading text
+│   Confidence: 100%
+
+└── CHAPTER headings (ONE through TEN, 1-99, I-X)
+    Example: "# CHAPTER ONE", "# CHAPTER 3: METHODOLOGY"
+    Action: Center heading text (including subtitle if present)
+    Confidence: 100%
+
+--- HEADINGS THAT STAY LEFT-ALIGNED ---
+
+• All subsections (##, ###, ####, etc.)
+• Numbered subsections within chapters (## 1.1 Background)
+• Individual appendix items (## Appendix A: Questionnaire)
+• Keywords section under Abstract
+• Any heading at level 2 or below
+
+--- IMPLEMENTATION NOTES ---
+
+1. Detection uses should_be_centered(text, heading_level) helper method
+2. Only level 1 headings (heading_level=1) are eligible for centering
+3. Centering flag is propagated through structuring to WordGenerator
+4. WordGenerator._add_section() sets heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+5. Works in combination with page breaks (page break first, then center)
+
+--- SPECIAL CASES ---
+
+Case 1: Chapter with Subtitle
+  Input:  "# CHAPTER ONE: INTRODUCTION AND BACKGROUND"
+  Output: Entire heading centered on single line
+
+Case 2: Abstract with Keywords
+  "# ABSTRACT" → Centered
+  "Abstract text..." → Left-aligned (justified)
+  "Keywords: ..." → Left-aligned
+
+Case 3: Dedication with Content
+  "# DEDICATION" → Centered
+  "To my parents..." → Left-aligned
+
+
+================================================================================
+CATEGORY: DISSERTATION_CHAPTER (Chapter Title Centralization)
+================================================================================
+Total Patterns: 6
+Confidence: 95-100%
+
+├── Pattern: ^#+?\s*CHAPTER\s+(ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN)\s*$ [IGNORECASE]
+│   Detects: Chapter headings with word numbers (standalone)
+│   Example: "# CHAPTER ONE"
+│   Output: <center><strong>CHAPTER ONE</strong></center>
+│   Confidence: 100%
+
+├── Pattern: ^#+?\s*CHAPTER\s+[1-9][0-9]?\s*$ [IGNORECASE]
+│   Detects: Chapter headings with Arabic numbers (standalone)
+│   Example: "# CHAPTER 1"
+│   Output: <center><strong>CHAPTER 1</strong></center>
+│   Confidence: 100%
+
+├── Pattern: ^#+?\s*CHAPTER\s+[IVXLC]+\s*$ [IGNORECASE]
+│   Detects: Chapter headings with Roman numerals (standalone)
+│   Example: "# CHAPTER III"
+│   Output: <center><strong>CHAPTER III</strong></center>
+│   Confidence: 100%
+
+├── Pattern: ^#+?\s*CHAPTER\s+(ONE|TWO|...|TEN)\s*[:\-\.]\s*.+$ [IGNORECASE]
+│   Detects: Chapter headings with title on same line (word numbers)
+│   Example: "# CHAPTER ONE: INTRODUCTION"
+│   Output: <center><strong>CHAPTER ONE</strong></center>
+│           <center><em>INTRODUCTION</em></center>
+│   Confidence: 100%
+
+├── Pattern: ^#+?\s*CHAPTER\s+[1-9][0-9]?\s*[:\-\.]\s*.+$ [IGNORECASE]
+│   Detects: Chapter headings with title on same line (Arabic numbers)
+│   Example: "# CHAPTER 1: LITERATURE REVIEW"
+│   Output: <center><strong>CHAPTER 1</strong></center>
+│           <center><em>LITERATURE REVIEW</em></center>
+│   Confidence: 100%
+
+├── Pattern: ^#+?\s*CHAPTER\s+[IVXLC]+\s*[:\-\.]\s*.+$ [IGNORECASE]
+│   Detects: Chapter headings with title on same line (Roman numerals)
+│   Example: "# CHAPTER II - METHODOLOGY"
+│   Output: <center><strong>CHAPTER II</strong></center>
+│           <center><em>METHODOLOGY</em></center>
+│   Confidence: 100%
+
+Chapter Title Following Detection:
+├── Pattern: ^#+?\s*[A-Z][A-Z\s]+$ (ALL CAPS)
+│   Detects: All caps title following chapter heading
+│   Example: Line after "CHAPTER ONE" = "INTRODUCTION"
+│   Condition: Previous line must be a chapter heading
+│   Confidence: 95%
+
+├── Pattern: Common academic section keywords [IGNORECASE]
+│   Detects: INTRODUCTION, LITERATURE REVIEW, METHODOLOGY, METHODS,
+│            RESULTS, DISCUSSION, CONCLUSION, CONCLUSIONS,
+│            RECOMMENDATIONS, THEORETICAL FRAMEWORK, RESEARCH METHODOLOGY,
+│            SUMMARY AND CONCLUSIONS, SUMMARY OF FINDINGS, DATA ANALYSIS,
+│            BACKGROUND, PROBLEM STATEMENT, RESEARCH DESIGN,
+│            FINDINGS AND DISCUSSION, ANALYSIS AND INTERPRETATION
+│   Confidence: 100%
+
+
+================================================================================
+CATEGORY: COPYRIGHT_PAGE (Copyright Page Formatting)
+================================================================================
+Total Patterns: 5
+Confidence: 95%
+
+├── Pattern: ^\s*©\s*[Cc]opyright\s+ [IGNORECASE]
+│   Detects: Copyright with © symbol first
+│   Example: "© Copyright by John Doe 2025"
+│   Confidence: 95%
+
+├── Pattern: ^\s*[Cc]opyright\s+© [IGNORECASE]
+│   Detects: Copyright with © after word
+│   Example: "Copyright © John Doe 2025"
+│   Confidence: 95%
+
+├── Pattern: ^\s*[Cc]opyright\s+\d{4} [IGNORECASE]
+│   Detects: Copyright with year
+│   Example: "Copyright 2025"
+│   Confidence: 95%
+
+├── Pattern: ^\s*All\s+Rights\s+Reserved\s*\.?\s*$ [IGNORECASE]
+│   Detects: "All Rights Reserved" line
+│   Example: "All Rights Reserved."
+│   Confidence: 95%
+
+├── Pattern: ^\s*No\s+part\s+of\s+this\s+(document|thesis|dissertation|work) [IGNORECASE]
+│   Detects: Standard copyright disclaimer
+│   Example: "No part of this dissertation may be reproduced..."
+│   Confidence: 95%
+
+Formatting Rules:
+- Copyright content appears on separate page
+- Positioned at bottom of page (with vertical spacing)
+- Text is centered, italic, smaller font size (10pt)
+- Page break before copyright page
+
+
+================================================================================
+CATEGORY: DECLARATION_PAGE (Declaration Formatting)
+================================================================================
+Total Patterns: 4
+Confidence: 95-100%
+
+├── Pattern: ^#+?\s*DECLARATION\s*$ [IGNORECASE]
+│   Detects: Declaration heading
+│   Example: "# DECLARATION"
+│   Confidence: 100%
+
+├── Pattern: I\s+(hereby\s+)?declare\s+that [IGNORECASE]
+│   Detects: Declaration statement start
+│   Example: "I hereby declare that..."
+│   Confidence: 95%
+
+├── Pattern: This\s+(thesis|dissertation|work)\s+is\s+(my\s+own|original) [IGNORECASE]
+│   Detects: Originality statement
+│   Example: "This thesis is my own original work..."
+│   Confidence: 95%
+
+├── Pattern: has\s+not\s+been\s+(previously\s+)?submitted [IGNORECASE]
+│   Detects: Non-submission statement
+│   Example: "...has not been previously submitted..."
+│   Confidence: 95%
+
+Formatting Rules:
+- Declaration starts on new page
+- Heading centered in bold
+- Content paragraphs are justified with first-line indent
+- Includes signature line (right-aligned)
+- Includes date line (right-aligned)
+- Default signature format: "Signed: ________________"
+- Default date format: "Date: ________________"
+
+
+================================================================================
+CATEGORY: CERTIFICATION_PAGE (Certification/Approval Formatting)
+================================================================================
+Total Patterns: 6
+Confidence: 95-100%
+
+├── Pattern: ^#+?\s*CERTIFICATION\s*$ [IGNORECASE]
+│   Detects: Certification heading
+│   Example: "# CERTIFICATION"
+│   Confidence: 100%
+
+├── Pattern: ^#+?\s*APPROVAL\s+PAGE\s*$ [IGNORECASE]
+│   Detects: Approval page heading
+│   Example: "# APPROVAL PAGE"
+│   Confidence: 100%
+
+├── Pattern: ^#+?\s*COMMITTEE\s+APPROVAL\s*$ [IGNORECASE]
+│   Detects: Committee approval heading
+│   Example: "# COMMITTEE APPROVAL"
+│   Confidence: 100%
+
+├── Pattern: This\s+is\s+to\s+certify\s+that [IGNORECASE]
+│   Detects: Certification statement
+│   Example: "This is to certify that this work..."
+│   Confidence: 95%
+
+├── Pattern: has\s+been\s+(read\s+and\s+)?approved [IGNORECASE]
+│   Detects: Approval statement
+│   Example: "...has been read and approved..."
+│   Confidence: 95%
+
+├── Pattern: meets\s+the\s+requirements? [IGNORECASE]
+│   Detects: Requirements statement
+│   Example: "...meets the requirements for..."
+│   Confidence: 95%
+
+Formatting Rules:
+- Certification starts on new page
+- Heading centered in bold
+- Content paragraphs justified with first-line indent
+- Multiple signature lines (right-aligned):
+  * "Supervisor: ________________"
+  * "Date: ________________"
+  * "Head of Department: ________________"
+  * "Date: ________________"
+
+
+================================================================================
+CATEGORY: SIGNATURE_LINE (Signature Block Patterns)
+================================================================================
+Total Patterns: 6
+Confidence: 95%
+
+├── Pattern: ^\s*_{10,}\s*$
+│   Detects: Long underscore line (signature line)
+│   Example: "__________________"
+│   Confidence: 95%
+
+├── Pattern: ^\s*\.{10,}\s*$
+│   Detects: Long dotted line (signature line)
+│   Example: "....................."
+│   Confidence: 95%
+
+├── Pattern: ^\s*-{10,}\s*$
+│   Detects: Long dash line (signature line)
+│   Example: "---------------------"
+│   Confidence: 95%
+
+├── Pattern: ^\s*(Signed?|Signature)\s*:\s*_{5,} [IGNORECASE]
+│   Detects: Labeled signature line
+│   Example: "Signature: ______________"
+│   Confidence: 95%
+
+├── Pattern: ^\s*Date\s*:\s*_{5,} [IGNORECASE]
+│   Detects: Date line
+│   Example: "Date: ______________"
+│   Confidence: 95%
+
+├── Pattern: ^\s*Name\s*:\s*_{5,} [IGNORECASE]
+│   Detects: Name line
+│   Example: "Name: ______________"
+│   Confidence: 95%
+
+
+================================================================================
+CATEGORY: SUPERVISOR_INFO (Supervisor/Advisor Patterns)
+================================================================================
+Total Patterns: 4
+Confidence: 90%
+
+├── Pattern: ^\s*(Supervisor|Advisor|Chair)\s*: [IGNORECASE]
+│   Detects: Supervisor label
+│   Example: "Supervisor: Dr. Jane Smith"
+│   Confidence: 90%
+
+├── Pattern: ^\s*(First|Second|Third)\s+(Reader|Supervisor|Advisor) [IGNORECASE]
+│   Detects: Multiple reader labels
+│   Example: "First Reader: Prof. John Doe"
+│   Confidence: 90%
+
+├── Pattern: ^\s*(Dr\.|Prof\.|Professor)\s+[A-Z] [IGNORECASE]
+│   Detects: Academic titles
+│   Example: "Prof. Jane Smith"
+│   Confidence: 90%
+
+├── Pattern: ^\s*Committee\s+(Member|Chair) [IGNORECASE]
+│   Detects: Committee role labels
+│   Example: "Committee Chair: Dr. Smith"
+│   Confidence: 90%
+
+
+================================================================================
+CATEGORY: TOC_ENTRY (Table of Contents Entries)
+================================================================================
+Total Patterns: 4
+Confidence: 90%
+
+├── Pattern: ^.+\.{3,}\s*\d+\s*$
+│   Detects: TOC entry with dot leaders
+│   Example: "Introduction......... 1"
+│   Confidence: 90%
+
+├── Pattern: ^.+\s+\.{2,}\s*\d+\s*$
+│   Detects: TOC entry with spaced dots
+│   Example: "Chapter One .. 5"
+│   Confidence: 90%
+
+├── Pattern: ^\s*[IVXLC]+\s+.+\s+\d+\s*$
+│   Detects: Roman numeral TOC entry
+│   Example: "III  Results  25"
+│   Confidence: 90%
+
+├── Pattern: ^\s*\d+\.\d*\s+.+\s+\d+\s*$
+│   Detects: Numbered section TOC entry
+│   Example: "1.2 Background 10"
+│   Confidence: 90%
+
+Formatting Rules:
+- TOC appears on separate page after Abstract
+- TOC heading centered in bold
+- Entries have dot leaders between title and page number
+- Page numbers right-aligned
+- Front matter uses Roman numerals (i, ii, iii)
+- Main content uses Arabic numerals (1, 2, 3)
+
+
+================================================================================
+CATEGORY: COMPREHENSIVE_DISSERTATION (Complete Dissertation Formatting)
+================================================================================
+Description: Orchestrates all dissertation patterns together
+
+Execution Order:
+  1. COPYRIGHT_PAGE_FORMATTING
+  2. DISSERTATION_FRONT_MATTER_FORMATTING
+  3. TABLE_OF_CONTENTS_PAGE_FORMATTING
+  4. DISSERTATION_CHAPTER_TITLE_CENTRALIZATION
+  5. ACADEMIC_HEADING_CENTRALIZATION
+
+Required Section Order:
+  1. Title Page (i)
+  2. Copyright Page (ii)
+  3. Declaration (iii)
+  4. Certification (iv)
+  5. Dedication (v) [optional]
+  6. Acknowledgements (vi)
+  7. Abstract (vii)
+  8. Table of Contents (viii)
+  9. List of Tables (ix) [if applicable]
+  10. List of Figures (x) [if applicable]
+  11. Chapters (1, 2, 3...)
+  12. References (continues)
+  13. Appendices (continues)
+
+Page Numbering Scheme:
+  - Front matter: Roman numerals (lowercase: i, ii, iii)
+  - Main body: Arabic numerals starting at 1
+  - Appendices: Continues Arabic numbering
+
+Formatting Summary by Section:
+  ┌─────────────────────┬───────────┬─────────┬────────────────┐
+  │ Section             │ Page Break│ Center  │ Special        │
+  ├─────────────────────┼───────────┼─────────┼────────────────┤
+  │ Title Page          │ Yes       │ Yes     │ University logo│
+  │ Copyright           │ Yes       │ Yes     │ Bottom, small  │
+  │ Declaration         │ Yes       │ Yes     │ + Signature    │
+  │ Certification       │ Yes       │ Yes     │ + Signatures   │
+  │ Dedication          │ Yes       │ Yes     │ Italic content │
+  │ Acknowledgements    │ Yes       │ Yes     │ Justified body │
+  │ Abstract            │ Yes       │ Yes     │ + Keywords bold│
+  │ Table of Contents   │ Yes       │ Yes     │ Dot leaders    │
+  │ List of Tables      │ Yes       │ Yes     │ Dot leaders    │
+  │ List of Figures     │ Yes       │ Yes     │ Dot leaders    │
+  │ CHAPTER X           │ Yes       │ Yes     │ Title centered │
+  │   (subsections)     │ No        │ No      │ Left-aligned   │
+  │ References          │ Yes       │ Yes     │ Hanging indent │
+  │ Appendices          │ Yes       │ Yes     │ Letter labels  │
+  └─────────────────────┴───────────┴─────────┴────────────────┘
+
+
+================================================================================
+CATEGORY: MAIN_HEADING_SPACE_REMOVAL (Spacing Cleanup)
+================================================================================
+Total Patterns: 8
+Confidence: 100%
+
+├── Pattern: ^#+\s+.+\s{2,}$
+│   Detects: Heading with 2+ trailing spaces
+│   Example: "# DEDICATION   " → "# DEDICATION"
+│   Action: Remove trailing whitespace
+│   Confidence: 100%
+
+├── Pattern: ^#+\s+.+\s{2,}[:\.]\s*
+│   Detects: Heading with multiple spaces before punctuation
+│   Example: "# CHAPTER ONE   :   INTRO" → "# CHAPTER ONE: INTRO"
+│   Action: Normalize to single space before, single after punctuation
+│   Confidence: 100%
+
+├── Pattern: ^#+\s+.+\s{3,}.+$
+│   Detects: Heading with 3+ consecutive internal spaces
+│   Example: "# TABLE  OF  CONTENTS" → "# TABLE OF CONTENTS"
+│   Action: Normalize to single spaces
+│   Confidence: 100%
+
+├── Pattern: \s{2,}
+│   Detects: Multiple consecutive spaces (general)
+│   Replacement: Single space
+│   Confidence: 100%
+
+├── Pattern: \s+,
+│   Detects: Space before comma
+│   Replacement: Remove space
+│   Confidence: 100%
+
+├── Pattern: \s+\.
+│   Detects: Space before period
+│   Replacement: Remove space (preserves decimals)
+│   Confidence: 100%
+
+├── Pattern: \s+:
+│   Detects: Space before colon
+│   Replacement: Remove space
+│   Confidence: 100%
+
+├── Pattern: \s+$
+│   Detects: Trailing whitespace
+│   Replacement: Remove
+│   Confidence: 100%
+
+Helper Methods:
+├── clean_heading_spaces(text)
+│   - Removes trailing spaces from headings
+│   - Normalizes multiple internal spaces to single
+│   - Fixes spacing around colons and hyphens
+│   - Only affects heading lines (starting with #)
+
+├── clean_document_spacing(text)
+│   - Applies to entire document
+│   - Removes trailing spaces from all lines
+│   - Fixes punctuation spacing (except in tables/code)
+│   - Calls clean_heading_spaces for heading lines
+
+├── is_main_heading(text)
+│   - Returns True for level 1 main headings
+│   - Recognizes: DEDICATION, ACKNOWLEDGEMENTS, ABSTRACT, etc.
+│   - Recognizes: CHAPTER headings (word/number/roman)
+│   - Used to determine which headings to clean
+
+Test Cases:
+┌────────────────────────────────────────────────────────────────────┐
+│ Input                              │ Output                        │
+├────────────────────────────────────┼───────────────────────────────┤
+│ "# DEDICATION   "                  │ "# DEDICATION"                │
+│ "# CHAPTER ONE    "                │ "# CHAPTER ONE"               │
+│ "# CHAPTER ONE   :   INTRODUCTION" │ "# CHAPTER ONE: INTRODUCTION" │
+│ "# TABLE  OF  CONTENTS"            │ "# TABLE OF CONTENTS"         │
+│ "# DECLARATION. "                  │ "# DECLARATION"               │
+│ "# REFERENCES      "               │ "# REFERENCES"                │
+│ "## 1.1 Background   "             │ "## 1.1 Background"           │
+│ "# CHAPTER TWO  :  LIT   REVIEW"   │ "# CHAPTER TWO: LIT REVIEW"   │
+└────────────────────────────────────┴───────────────────────────────┘
+
+Integration:
+- Applied BEFORE line analysis in analyze_line()
+- Applied to full document in process_text()
+- Runs AFTER centering patterns
+- Runs BEFORE final document generation
+- Works WITH page break and centering patterns
+
+
+================================================================================
+CATEGORY: ACADEMIC_TABLE_FORMATTING (Table Alignment & Sizing)
+================================================================================
+Total Patterns: 12
+Confidence: 95-100%
+
+Description: Format academic tables with proper alignment based on content type
+
+Content Type Detection Patterns:
+├── table_content_numeric:
+│   ├── Pattern: ^\s*[\-\+]?\d+\.?\d*\s*$
+│   │   Detects: Plain numbers (123, 123.45, -45.6)
+│   │   Alignment: RIGHT
+│   │
+│   └── Pattern: ^\s*[\-\+]?\d{1,3}(,\d{3})*(\.\d+)?\s*$
+│       Detects: Comma-separated numbers (1,234.56)
+│       Alignment: RIGHT
+
+├── table_content_percentage:
+│   └── Pattern: ^\s*[\-\+]?\d+\.?\d*\s*%\s*$
+│       Detects: Percentages (25.5%, -10%)
+│       Alignment: RIGHT
+
+├── table_content_statistical:
+│   ├── Pattern: [βαγδ]
+│   │   Detects: Greek letters (statistical notation)
+│   │
+│   ├── Pattern: p\s*[<>=]\s*[\d\.]+
+│   │   Detects: p-values (p < 0.05, p = 0.001)
+│   │
+│   ├── Pattern: [Ff]\s*\(\s*\d+\s*,\s*\d+\s*\)
+│   │   Detects: F-statistics (F(3, 56))
+│   │
+│   ├── Pattern: [Rr]²?\s*=\s*[\d\.]+
+│   │   Detects: R or R-squared (R² = 0.85)
+│   │
+│   ├── Pattern: [Tt]\s*\(\s*\d+\s*\)
+│   │   Detects: t-statistics (t(45))
+│   │
+│   ├── Pattern: χ²\s*\(\s*\d+\s*\)
+│   │   Detects: Chi-square (χ²(5))
+│   │
+│   ├── Pattern: SE\s*=?\s*[\d\.]+
+│   │   Detects: Standard error
+│   │
+│   ├── Pattern: CI\s*=?\s*\[
+│   │   Detects: Confidence interval start
+│   │
+│   └── Pattern: \*{1,3}$
+│       Detects: Significance asterisks (*, **, ***)
+│       Alignment: CENTER
+
+├── table_content_ci:
+│   ├── Pattern: \[[\d\.\-,\s]+\]
+│   │   Detects: CI brackets [0.5, 1.2]
+│   │
+│   └── Pattern: \([\d\.\-,\s]+\)
+│       Detects: CI parentheses (0.5, 1.2)
+│       Alignment: CENTER
+
+├── table_caption_format:
+│   ├── Pattern: ^\s*[Tt]able\s+\d+\.\d+[\:\.]?\s*.+$
+│   │   Detects: Table 4.1: Title
+│   │
+│   ├── Pattern: ^\s*[Tt]able\s+\d+[\:\.]?\s*.+$
+│   │   Detects: Table 4: Title
+│   │
+│   ├── Pattern: ^\s*\*\*[Tt]able\s+\d+\.?\d*\*\*[\:\.]?\s*.+$
+│   │   Detects: **Table 4.1**: Title (bold markdown)
+│   │
+│   └── Pattern: ^\s*TABLE\s+\d+\.?\d*[\:\.]?\s*.+$
+│       Detects: TABLE 4.1: Title (uppercase)
+
+Alignment Rules by Content Type:
+┌───────────────┬─────────────┬─────────────────────────────────────┐
+│ Content Type  │ Alignment   │ Example                             │
+├───────────────┼─────────────┼─────────────────────────────────────┤
+│ text          │ LEFT        │ "Description", "Category"           │
+│ numeric       │ RIGHT       │ "123.45", "1,234"                   │
+│ percentage    │ RIGHT       │ "25.5%", "100.0%"                   │
+│ statistical   │ CENTER      │ "β = 0.45", "p < 0.001**"          │
+│ header        │ CENTER      │ (First row always centered)         │
+└───────────────┴─────────────┴─────────────────────────────────────┘
+
+Helper Methods:
+├── get_cell_content_type(cell_text)
+│   - Analyzes cell content to determine type
+│   - Returns: 'numeric', 'percentage', 'statistical', or 'text'
+│   - Priority: percentage → statistical → numeric → text
+
+├── get_column_content_types(rows)
+│   - Analyzes all rows to find predominant type per column
+│   - Skips header row in analysis
+│   - Returns list of types, one per column
+
+├── get_alignment_for_content_type(content_type)
+│   - Maps content type to Word alignment constant
+│   - text → LEFT, numeric/percentage → RIGHT, statistical → CENTER
+
+Table Formatting Applied:
+├── Caption:
+│   - Position: Above table
+│   - Alignment: Centered
+│   - Style: Bold, Times New Roman, 12pt
+│   - Spacing: 6pt after
+
+├── Header Row (Row 0):
+│   - Alignment: Always centered
+│   - Style: Bold
+│   - Font: Times New Roman, 12pt
+
+├── Data Rows:
+│   - Alignment: Based on column content type
+│   - Font: Times New Roman, 12pt
+│   - Cell spacing: 2pt before/after
+
+├── Table Style:
+│   - Style: Table Grid (borders)
+│   - AutoFit: Enabled
+│   - Line spacing: 1.0 within cells
+
+Example Transformations:
+┌─────────────────────────────────────────────────────────────────────┐
+│ Input Table:                                                        │
+│ | Variable | β | SE | p-value |                                     │
+│ |----------|---|----|---------| 									  │
+│ | X1 | 0.478 | 0.144 | 0.002 |                                      │
+│ | X2 | 0.068 | 0.122 | 0.578 |                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│ Output (Word):                                                      │
+│ ┌──────────────┬───────────┬───────────┬─────────────┐              │
+│ │   Variable   │     β     │    SE     │   p-value   │  ← Centered  │
+│ ├──────────────┼───────────┼───────────┼─────────────┤              │
+│ │ X1           │   0.478   │   0.144   │    0.002    │  ← Mixed     │
+│ │ X2           │   0.068   │   0.122   │    0.578    │              │
+│ └──────────────┴───────────┴───────────┴─────────────┘              │
+│   LEFT           CENTER      CENTER      CENTER                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+Specialized Table Types Recognized:
+├── Statistical Results Table
+│   - Contains: β, p-value, SE, CI
+│   - Decimal places: 3
+│   - Significance notation: asterisks
+
+├── Demographic Data Table
+│   - Contains: Frequency, Percentage, n=
+│   - Percentage format: 0.0%
+│   - Total row: Bold
+
+├── Correlation Matrix
+│   - Symmetric structure
+│   - Diagonal: 1.000
+│   - Significance: asterisks
+
+Integration:
+- Applied in WordGenerator._add_table()
+- Uses PatternEngine for content analysis
+- Compatible with all table sources (markdown, docx)
+
+
+================================================================================
+CATEGORY: SHORT_DOCUMENT_FORMATTING (Assignments, Course Materials)
+================================================================================
+Total Patterns: 62
+Confidence: 85-95%
+
+Purpose: Special formatting for short documents (assignments, course materials,
+exercises) - removes unnecessary TOC and emphasizes key points for quick reading.
+
+├── SHORT_DOC_INDICATORS (Pattern Group 35)
+│   Detects: Short document type markers
+│   Total: 8 patterns
+│   
+│   ├── Pattern: ^Assignment\s*\d*[\:\.]?\s* [IGNORECASE]
+│   │   Detects: Assignment headers
+│   │   Example: "Assignment 1:", "Assignment:"
+│   │   Confidence: 95%
+│   │
+│   ├── Pattern: ^Homework\s*\d*[\:\.]?\s* [IGNORECASE]
+│   │   Detects: Homework headers
+│   │   Example: "Homework 3:", "Homework:"
+│   │   Confidence: 95%
+│   │
+│   ├── Pattern: ^Course\s+Material[\:\.]?\s* [IGNORECASE]
+│   │   Detects: Course material headers
+│   │   Example: "Course Material:"
+│   │   Confidence: 90%
+│   │
+│   ├── Pattern: ^Exercise\s*\d*[\:\.]?\s* [IGNORECASE]
+│   │   Detects: Exercise headers
+│   │   Example: "Exercise 5:"
+│   │   Confidence: 95%
+│   │
+│   ├── Pattern: ^Lab\s*\d*[\:\.]?\s* [IGNORECASE]
+│   │   Detects: Lab assignment headers
+│   │   Example: "Lab 2:"
+│   │   Confidence: 90%
+│   │
+│   ├── Pattern: ^Worksheet[\:\.]?\s* [IGNORECASE]
+│   │   Detects: Worksheet headers
+│   │   Example: "Worksheet:"
+│   │   Confidence: 90%
+│   │
+│   ├── Pattern: ^Quiz\s*\d*[\:\.]?\s* [IGNORECASE]
+│   │   Detects: Quiz headers
+│   │   Example: "Quiz 1:"
+│   │   Confidence: 90%
+│   │
+│   └── Pattern: ^Problem\s+Set\s*\d*[\:\.]?\s* [IGNORECASE]
+│       Detects: Problem set headers
+│       Example: "Problem Set 4:"
+│       Confidence: 90%
+
+├── LONG_DOC_INDICATORS (Pattern Group 36)
+│   Detects: Formal academic document markers (exclude from short doc formatting)
+│   Total: 6 patterns
+│   
+│   ├── Pattern: Dissertation [IGNORECASE]
+│   ├── Pattern: \bThesis\b [IGNORECASE]
+│   ├── Pattern: \bPhD\b [IGNORECASE]
+│   ├── Pattern: Master's\s+(?:Thesis|Dissertation) [IGNORECASE]
+│   ├── Pattern: Literature\s+Review [IGNORECASE]
+│   └── Pattern: Abstract [IGNORECASE]
+│       Note: If any of these are found, document is NOT treated as short
+
+├── TOC_PATTERNS (Pattern Group 37)
+│   Detects: Table of Contents for removal in short documents
+│   Total: 8 patterns
+│   
+│   ├── toc_header:
+│   │   ├── Pattern: ^#+\s*TABLE\s+OF\s+CONTENTS\s*$ [IGNORECASE]
+│   │   ├── Pattern: ^TABLE\s+OF\s+CONTENTS\s*$ [IGNORECASE]
+│   │   ├── Pattern: ^Contents\s*$ [IGNORECASE]
+│   │   └── Pattern: ^#+\s*Contents\s*$ [IGNORECASE]
+│   │
+│   └── toc_content_line:
+│       ├── Pattern: ^\d+\.\s+.+\.{3,}\s*\d+$
+│       │   Example: "1. Introduction ........ 5"
+│       ├── Pattern: ^[A-Za-z].+\.{3,}\s*\d+$
+│       │   Example: "Introduction ........ 5"
+│       ├── Pattern: ^.+\s+\.{5,}\s*\d+$
+│       │   Example: "Section Title .......... 12"
+│       └── Pattern: ^\s*\d+\.\d+\s+.+\s+\d+\s*$
+│           Example: "1.1 Section  5"
+
+├── KEY_POINT_LEARNING (Pattern Group 38)
+│   Detects: Learning objectives and goals
+│   Total: 7 patterns
+│   Emoji Prefix: 📚
+│   
+│   ├── Pattern: ^Learning\s+Objectives?[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Objectives?[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Goals?[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^By\s+the\s+end.*you\s+will\s+be\s+able\s+to[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Learning\s+Outcomes?[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Outcome\s+\d+[\:\.]?\s* [IGNORECASE]
+│   └── Pattern: ^Objective\s+\d+[\:\.]?\s* [IGNORECASE]
+│       Format: Bold
+│       Example: "📚 **Learning Objectives:**"
+
+├── KEY_POINT_DEFINITIONS (Pattern Group 39)
+│   Detects: Important definitions
+│   Total: 4 patterns
+│   Format: Bold (term) + Regular (definition)
+│   
+│   ├── Pattern: ^Definition[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^[A-Z][a-z]+\s+is\s+(?:defined\s+as|refers\s+to) [IGNORECASE]
+│   ├── Pattern: ^The\s+term\s+["\'][^"\']+["\']\s+means [IGNORECASE]
+│   └── Pattern: ^[A-Z][a-z]+[\:\s]+(?:A|An|The)\s+ [IGNORECASE]
+│       Example: "**Algorithm:** A step-by-step procedure"
+
+├── KEY_POINT_CONCEPTS (Pattern Group 40)
+│   Detects: Critical information markers
+│   Total: 7 patterns
+│   Emoji Prefix: 🔑
+│   
+│   ├── Pattern: ^Key\s+(?:Concept|Idea|Point)[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Important[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Note[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Remember[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Critical[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Essential[\:\.]?\s* [IGNORECASE]
+│   └── Pattern: ^Key\s+Takeaway[\:\.]?\s* [IGNORECASE]
+│       Format: Bold
+│       Example: "🔑 **Important:** Always validate user input"
+
+├── KEY_POINT_PROCEDURES (Pattern Group 41)
+│   Detects: Steps and procedures
+│   Total: 7 patterns
+│   Emoji Prefix: 📝
+│   
+│   ├── Pattern: ^Steps?[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Procedure[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Process[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Algorithm[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Method[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Step\s+\d+[\:\.]?\s* [IGNORECASE]
+│   └── Pattern: ^Instructions?[\:\.]?\s* [IGNORECASE]
+│       Format: Bold
+│       Example: "📝 **Step 1:** Initialize the variables"
+
+├── KEY_POINT_EXAMPLES (Pattern Group 42)
+│   Detects: Example markers
+│   Total: 7 patterns
+│   Emoji Prefix: 📋
+│   
+│   ├── Pattern: ^Example[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^For\s+instance[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^For\s+example[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Consider[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Sample[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Example\s+\d+[\:\.]?\s* [IGNORECASE]
+│   └── Pattern: ^Case\s+Study[\:\.]?\s* [IGNORECASE]
+│       Format: Italic
+│       Example: "📋 *Example: x = 5*"
+
+├── KEY_POINT_WARNINGS (Pattern Group 43)
+│   Detects: Caution/warning markers
+│   Total: 7 patterns
+│   Emoji Prefix: ⚠️
+│   
+│   ├── Pattern: ^Warning[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Caution[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Avoid[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Common\s+(?:mistake|error)[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Do\s+not[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Never[\:\.]?\s* [IGNORECASE]
+│   └── Pattern: ^Pitfall[\:\.]?\s* [IGNORECASE]
+│       Format: Bold
+│       Example: "⚠️ **Warning:** Do not divide by zero"
+
+├── KEY_POINT_EXERCISES (Pattern Group 44)
+│   Detects: Exercise/question markers
+│   Total: 9 patterns
+│   Emoji Prefix: 💪
+│   
+│   ├── Pattern: ^Exercise[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Question[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Problem[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Task[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Challenge[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Exercise\s+\d+[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Question\s+\d+[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Problem\s+\d+[\:\.]?\s* [IGNORECASE]
+│   └── Pattern: ^Practice[\:\.]?\s* [IGNORECASE]
+│       Format: Bold
+│       Example: "💪 **Exercise 1:** Write a program to calculate factorial"
+
+├── KEY_POINT_SUMMARY (Pattern Group 45)
+│   Detects: Summary/conclusion markers
+│   Total: 7 patterns
+│   Emoji Prefix: 📊
+│   
+│   ├── Pattern: ^Summary[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Conclusion[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Takeaways?[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^In\s+summary[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^To\s+(?:summarize|recap)[\:\.]?\s* [IGNORECASE]
+│   ├── Pattern: ^Main\s+(?:points?|takeaways?)[\:\.]?\s* [IGNORECASE]
+│   └── Pattern: ^Key\s+Points?[\:\.]?\s* [IGNORECASE]
+│       Format: Bold
+│       Example: "📊 **Summary:** Practice makes perfect"
+
+└── ASSIGNMENT_HEADER (Pattern Group 46)
+    Detects: Assignment metadata fields
+    Total: 11 patterns
+    
+    ├── Pattern: ^Student(?:\s+Name)?[\:\.]?\s* [IGNORECASE]
+    ├── Pattern: ^Student\s+ID[\:\.]?\s* [IGNORECASE]
+    ├── Pattern: ^Name[\:\.]?\s* [IGNORECASE]
+    ├── Pattern: ^Course(?:\s+Code)?[\:\.]?\s* [IGNORECASE]
+    ├── Pattern: ^Instructor[\:\.]?\s* [IGNORECASE]
+    ├── Pattern: ^Professor[\:\.]?\s* [IGNORECASE]
+    ├── Pattern: ^Due\s+Date[\:\.]?\s* [IGNORECASE]
+    ├── Pattern: ^Date[\:\.]?\s* [IGNORECASE]
+    ├── Pattern: ^Submitted\s+(?:by|to)[\:\.]?\s* [IGNORECASE]
+    ├── Pattern: ^Class[\:\.]?\s* [IGNORECASE]
+    └── Pattern: ^Section[\:\.]?\s* [IGNORECASE]
+        Format: Bold
+        Example: "**Student Name:** John Doe"
+
+--- SHORT DOCUMENT DETECTION CRITERIA ---
+
+A document is classified as "short" when:
+1. Word count < 3000 words, OR
+2. Estimated pages < 10 (2000 chars per page), OR
+3. Line count < 500 lines, OR
+4. Contains short document indicators (Assignment, Homework, etc.), OR
+5. Heading/section count < 10
+
+A document is NOT short if it contains long document indicators:
+- "Dissertation", "Thesis", "PhD", "Master's Thesis"
+- "Literature Review", "Abstract"
+
+--- SHORT DOCUMENT PROCESSING ---
+
+1. TOC REMOVAL:
+   - Detect TOC header (TABLE OF CONTENTS, Contents)
+   - Skip all TOC content lines (with dot leaders, page numbers)
+   - End TOC detection on: 2 blank lines OR real heading
+
+2. KEY POINT EMPHASIS:
+   - Detect key point type from pattern match
+   - Add emoji prefix based on category
+   - Apply formatting: Bold (most), Italic (examples)
+
+3. ASSIGNMENT HEADER:
+   - Detect metadata fields (Student Name, Course, etc.)
+   - Apply bold formatting
+
+--- HELPER METHODS ---
+
+- is_short_document(text) - Returns (is_short, reason)
+- is_toc_header_line(text) - Check if line is TOC header
+- is_toc_content_line(text) - Check if line is TOC entry
+- remove_toc_from_lines(lines) - Remove TOC section
+- get_key_point_type(text) - Returns (type, emoji) or (None, None)
+- is_assignment_header_field(text) - Check if line is assignment field
+- emphasize_key_point(text, type, emoji) - Apply emphasis formatting
+- process_short_document(text) - Full short document processing
+
+--- EXAMPLE TRANSFORMATION ---
+
+Input (short assignment):
+  # Programming Assignment 1
+  
+  TABLE OF CONTENTS
+  1. Introduction ........ 1
+  2. Exercises ........ 2
+  
+  Student Name: John Doe
+  Course: CS101
+  Due Date: January 5, 2026
+  
+  Objective: Learn basic Python syntax
+  
+  Important: Always test your code
+  
+  Warning: Avoid infinite loops
+  
+  Exercise 1: Print "Hello World"
+  
+  Summary: Practice makes perfect
+
+Output (formatted):
+  # Programming Assignment 1
+  
+  **Student Name: John Doe**
+  **Course: CS101**
+  **Due Date: January 5, 2026**
+  
+  📚 **Objective:** Learn basic Python syntax
+  
+  🔑 **Important:** Always test your code
+  
+  ⚠️ **Warning:** Avoid infinite loops
+  
+  💪 **Exercise 1:** Print "Hello World"
+  
+  📊 **Summary:** Practice makes perfect
+
+
+================================================================================
+                            CHANGE LOG
+================================================================================
+
+[December 30, 2025] - Added SHORT_DOCUMENT_FORMATTING Pattern
+  - NEW: Special formatting for short documents (assignments, course materials)
+  - Automatic detection of short documents by:
+    * Word count (< 3000), estimated pages (< 10), line count (< 500)
+    * Short document indicators (Assignment, Homework, Exercise, Lab, etc.)
+    * Exclusion of formal documents (Dissertation, Thesis, etc.)
+  - NEW: Table of Contents removal for short documents
+    * Detects TOC header and content lines
+    * Removes entire TOC section
+  - NEW: Key point emphasis with 8 categories:
+    * 📚 Learning objectives (bold)
+    * 🔑 Key concepts (bold)
+    * 📝 Procedures/steps (bold)
+    * 📋 Examples (italic)
+    * ⚠️ Warnings (bold)
+    * 💪 Exercises (bold)
+    * 📊 Summary (bold)
+    * Definitions (bold term + regular definition)
+  - NEW: Assignment header field detection and bold formatting
+  - Added 62 new patterns across 12 pattern groups
+  - Added helper methods:
+    * is_short_document(text)
+    * is_toc_header_line(text)
+    * is_toc_content_line(text)
+    * remove_toc_from_lines(lines)
+    * get_key_point_type(text)
+    * is_assignment_header_field(text)
+    * emphasize_key_point(text, type, emoji)
+    * process_short_document(text)
+  - Integrated into DocumentProcessor.process_text()
+  - Added WordGenerator handling for key_point and assignment_header_field types
+  - Updated total pattern count: 250+ → 312+ patterns
+
+[December 30, 2025] - Added ACADEMIC_TABLE_FORMATTING Pattern
+  - NEW: Intelligent table alignment based on content type
+  - Content type detection: numeric, percentage, statistical, text
+  - Alignment rules: text→LEFT, numeric→RIGHT, statistical→CENTER
+  - Header row always centered and bold
+  - Added 12 content type detection patterns
+  - Added helper methods:
+    * get_cell_content_type(cell_text)
+    * get_column_content_types(rows)
+    * get_alignment_for_content_type(content_type)
+  - Updated _add_table() with academic formatting
+  - All table content: Times New Roman, 12pt
+  - Updated total pattern count: 238 → 250+ patterns
+
+[December 30, 2025] - Added MAIN_HEADING_SPACE_REMOVAL Pattern
+  - NEW: Automatic space cleanup for all headings
+  - Removes trailing spaces from heading lines
+  - Normalizes multiple internal spaces to single space
+  - Fixes spacing around punctuation (colons, hyphens)
+  - Added helper methods:
+    * clean_heading_spaces(text) - Cleans individual heading
+    * clean_document_spacing(text) - Cleans entire document
+    * is_main_heading(text) - Checks if heading is main section
+  - Integration points:
+    * analyze_line() - Cleans headings before analysis
+    * process_text() - Cleans document before processing
+  - Added 8 spacing-related regex patterns
+  - Updated total pattern count: 230 → 238+ patterns
+
+[December 30, 2025] - Added DISSERTATION/THESIS FORMATTING Patterns
+  - NEW: DISSERTATION_CHAPTER_TITLE_CENTRALIZATION pattern
+    * Detects chapter headings (CHAPTER ONE/1/I)
+    * Detects chapter titles on same line or following line
+    * Centers both chapter heading and title
+    * Splits combined heading:title into two centered lines
+  - NEW: COPYRIGHT_PAGE_FORMATTING pattern
+    * Detects copyright notices (©, All Rights Reserved)
+    * Formats on separate page, bottom-positioned
+    * Small italic centered text
+  - NEW: DECLARATION_PAGE formatting
+    * Centered heading, justified content
+    * Auto-adds signature and date lines
+  - NEW: CERTIFICATION_PAGE formatting
+    * Centered heading, justified content
+    * Multiple signature blocks for committee
+  - NEW: SIGNATURE_LINE patterns (6 patterns)
+    * Underscore, dotted, dash lines
+    * Signed:, Date:, Name: labels
+  - NEW: SUPERVISOR_INFO patterns (4 patterns)
+    * Supervisor/Advisor labels
+    * Committee member/chair labels
+  - NEW: TOC_ENTRY patterns (4 patterns)
+    * Dot leader detection
+    * Page number extraction
+  - NEW: COMPREHENSIVE_DISSERTATION orchestration
+    * Defines section order and formatting rules
+  - Added helper methods:
+    * is_chapter_heading(text) - Returns (is_chapter, num, title)
+    * is_chapter_title(text, prev_was_chapter)
+    * is_copyright_content(text)
+    * is_declaration_content(text)
+    * is_certification_content(text)
+    * is_signature_line(text)
+    * is_toc_entry(text)
+    * get_front_matter_section_type(text)
+  - Added WordGenerator methods:
+    * _add_chapter_section(section)
+    * _add_front_matter_section(section)
+    * _add_dedication_content(section)
+    * _add_declaration_content(section)
+    * _add_certification_content(section)
+    * _add_acknowledgements_content(section)
+    * _add_abstract_content(section)
+    * _add_toc_content(section)
+  - Updated total pattern count: 197 → 230+ patterns
+
+[December 30, 2025] - Added ACADEMIC_HEADING_CENTRALIZATION Pattern
+  - NEW: Automatic centering of major academic section headings
+  - Sections centered: Dedication, Acknowledgements, Abstract, TOC,
+    List of Tables/Figures, Glossary, Abbreviations, Appendices,
+    References, Bibliography, and all Chapter headings
+  - Added should_be_centered(text, heading_level) helper method
+  - Updated heading detection to set should_center flag
+  - Updated WordGenerator._add_section() to apply centering
+  - Only level 1 headings can be centered; subsections stay left-aligned
+
+[December 30, 2025] - Added POINT_FORM_CONTENT_FORMATTING Pattern
+  - NEW: Automatic detection and formatting of point-form content in short documents
+  - Pattern ID: POINT_FORM_CONTENT_FORMATTING
+  - Applies to: assignment, course_material, short_report, study_guide, handout
+  - Document requirements: max 10 pages, max 3000 words, max 5 sections
+  
+  NEW PATTERN GROUPS ADDED:
+  - point_form_numbered (6 patterns): Detect numbered lists (1., 1), a., a), i., (1), etc.)
+  - point_form_bulleted (3 patterns): Detect bullet lists (-, *, •, →, etc.)
+  - point_form_checkbox (7 patterns): Detect checkbox lists (□, ☐, ☑, [ ], [x], etc.)
+  - point_form_context_clues (7 patterns): Detect phrases preceding lists ("the following:", etc.)
+  - point_form_objectives (5 patterns): Learning objectives/goals headings
+  - point_form_steps (7 patterns): Steps/procedures headings
+  - point_form_key_points (6 patterns): Key points/main ideas headings
+  - point_form_features (5 patterns): Features/characteristics headings
+  - point_form_pros_cons (8 patterns): Advantages/disadvantages headings
+  - point_form_examples (5 patterns): Examples/cases headings
+  - point_form_questions (5 patterns): Questions/problems/exercises headings
+  - point_form_requirements (6 patterns): Requirements/prerequisites headings
+  - point_form_tips (5 patterns): Tips/suggestions headings
+  - point_form_warnings (6 patterns): Warnings/cautions headings
+  - point_form_components (5 patterns): Components/parts headings
+  - point_form_rules (5 patterns): Rules/principles headings
+  - point_form_serial_comma (2 patterns): Detect serial comma lists in sentences
+  - point_form_ordinal_sentence (5 patterns): Detect ordinal step patterns (First, Second...)
+  
+  TOTAL NEW PATTERNS: 93 patterns across 18 groups
+  
+  NEW HELPER METHODS ADDED:
+  - is_point_form_line(text) - Check if line is already in point form
+  - get_point_form_heading_type(text) - Detect structured content headings
+  - has_list_context_clue(text) - Check for list context clues (ends with colon)
+  - extract_serial_comma_items(text) - Extract items from serial comma sentences
+  - extract_ordinal_steps(text) - Extract steps from First/Second/Third sentences
+  - clean_point_content(text) - Clean/normalize point content
+  - format_as_numbered_list(items) - Format items as numbered list
+  - format_as_bulleted_list(items) - Format items as bulleted list
+  - standardize_existing_list(lines, start_idx, format_type) - Standardize existing lists
+  - process_point_form_content(text) - Main processing method
+  - could_be_list_item(text) - Heuristic check for potential list items
+  - format_point_block(lines, format_type) - Format a block as list
+  
+  TRANSFORMATIONS PERFORMED:
+  1. Serial comma sentences → Bulleted lists
+     Input: "Tools needed: hammer, nails, and screwdriver"
+     Output:
+       **Tools needed:**
+       - Hammer
+       - Nails
+       - Screwdriver
+  
+  2. Ordinal step sentences → Numbered lists
+     Input: "First, download the file. Second, run the installer. Third, restart."
+     Output:
+       1. Download the file
+       2. Run the installer
+       3. Restart
+  
+  3. Structured headings → Bold + formatted list
+     Input: "Learning Objectives:\nUnderstand concepts\nApply methods"
+     Output:
+       **Learning Objectives:**
+       - Understand concepts
+       - Apply methods
+  
+  4. Inconsistent list markers → Standardized format
+     Input: "1) First item\n2. Second item\n3- Third item"
+     Output:
+       1. First item
+       2. Second item
+       3. Third item
+  
+  INTEGRATION:
+  - Integrated into process_short_document() method
+  - Runs after TOC removal, before key point emphasis
+  - Only applies to short documents (< 10 pages, < 3000 words)
+  
+  Updated total pattern count: 230 → 323+ patterns
+
+[December 30, 2025] - Added IMAGE EXTRACTION & REINSERTION System
+  - NEW FEATURE: Complete image preservation during document processing
+  - PROBLEM SOLVED: Images were previously lost during formatting
+  
+  NEW CLASSES:
+  
+  1. ImageExtractor Class:
+     - extract_all_images(doc_path) - Main extraction method
+     - _extract_images_from_paragraph() - Inline images in paragraphs
+     - _extract_images_from_table() - Images in table cells
+     - _extract_floating_images() - Anchored/floating images
+     - _get_image_from_rId() - Get binary data from relationship ID
+     - _get_inline_dimensions() - Get width/height from element
+     - _emu_to_inches() - Convert EMU to inches
+     - _detect_caption() - Detect figure captions
+     - get_images_by_position() - Organize images by position
+     
+     Extracted Image Metadata:
+     {
+       'image_id': 'img_0001',
+       'position_type': 'paragraph'|'table'|'floating',
+       'paragraph_index': int,
+       'element_index': int,
+       'table_location': {table_index, row_index, cell_index} or None,
+       'data': binary_bytes,
+       'format': 'png'|'jpeg'|'gif'|etc,
+       'width': float_inches,
+       'height': float_inches,
+       'caption': detected_caption or None,
+       'is_inline': True|False,
+       'anchor_type': 'inline'|'floating'
+     }
+  
+  2. ImageInserter Class:
+     - insert_image(image_id, after_paragraph) - Insert at position
+     - insert_image_in_table_cell(image_id, cell) - Insert in table
+  
+  SUPPORTED IMAGE FORMATS:
+  - PNG, JPEG/JPG, GIF, BMP, TIFF, EMF, WMF
+  
+  CAPTION PATTERNS DETECTED:
+  - Figure X: Description
+  - Fig. X: Description
+  - Image X: Description
+  - Diagram X: Description
+  - Chart X: Description
+  - Graph X: Description
+  - Illustration X: Description
+  - Photo X: Description
+  - Plate X: Description
+  
+  INTEGRATION POINTS:
+  
+  1. DocumentProcessor Changes:
+     - Added self.image_extractor = ImageExtractor()
+     - Added self.extracted_images = []
+     - process_docx() now returns (result, images) tuple
+     - Images tracked via image_positions lookup
+     - Image placeholders inserted in document structure:
+       {'type': 'image_placeholder', 'image_id': 'img_0001'}
+  
+  2. WordGenerator Changes:
+     - Added self.images and self.image_lookup
+     - generate() now accepts images parameter
+     - Added _insert_image(image_id) method
+     - _add_section_content() handles image_placeholder type
+  
+  3. Flask Route Changes:
+     - /upload now handles (result, images) tuple return
+     - Images passed to WordGenerator.generate()
+     - Response includes 'images_preserved' count
+  
+  IMAGE PROCESSING FLOW:
+  
+  INPUT DOCUMENT:
+    Paragraph 1
+    [IMAGE - Chart]
+    Figure 1: Sales data
+    Paragraph 2
+  
+  EXTRACTION PHASE:
+    1. ImageExtractor scans document
+    2. Finds image at paragraph index 1
+    3. Detects "Figure 1: Sales data" as caption
+    4. Stores: {image_id: 'img_0001', data: bytes, caption: '...'}
+  
+  PROCESSING PHASE:
+    1. DocumentProcessor inserts placeholder:
+       [IMAGE:img_0001]
+    2. Placeholder tracked in document structure
+  
+  OUTPUT PHASE:
+    1. WordGenerator encounters image_placeholder
+    2. Calls _insert_image('img_0001')
+    3. Image reinserted with original dimensions
+    4. Caption added below image
+  
+  EDGE CASES HANDLED:
+  - Images in table cells (track cell coordinates)
+  - Multiple images per paragraph (maintain order)
+  - Images without captions (still insert)
+  - Large images (scaled proportionally, max 6x8 inches)
+  - Floating/anchored images (detected and preserved)
+  - Corrupted image data (logged, placeholder inserted)
+  
+  DIMENSION HANDLING:
+  - Width/height extracted from EMU (English Metric Units)
+  - 914400 EMU = 1 inch
+  - Max dimensions: 6 inches wide, 8 inches tall
+  - Minimum dimensions: 0.5 inches
+  - Aspect ratio preserved during scaling
+  
+  LOGGING:
+  - All image operations logged via Python logging
+  - Level: INFO for success, WARNING for issues, ERROR for failures
+
+[December 30, 2025] - Added ACADEMIC_SECTION_PAGE_BREAKS Pattern
+  - NEW: Automatic page break insertion for major academic sections
+  - Sections covered: Acknowledgements, Dedication, Abstract, TOC, 
+    List of Tables/Figures, Glossary, Abbreviations, Appendices, 
+    References, Bibliography, and all Chapter headings
+  - Added should_start_on_new_page() helper method to PatternEngine
+  - Updated heading detection to set needs_page_break flag
+  - Updated WordGenerator._add_section() to insert page breaks
+  - Updated total pattern count: 169 → 197+ patterns
+
+[December 30, 2025] - Added 20 NEW Academic Formatting Patterns
+  - HEADING_HIERARCHY: Markdown-style headings (# syntax, setext) (3 patterns)
+  - ACADEMIC_TABLE: Table detection (caption, header, separator, data) (4 patterns)
+  - LIST_NESTED: Nested lists and checkboxes (4 patterns)
+  - FIGURE_EQUATION: Figure/equation captions (4 patterns)
+  - CITATION_INLINE: In-text citation formats (APA, IEEE, etc.) (4 patterns)
+  - RUNNING_HEADER: Running heads and page headers (3 patterns)
+  - APPENDIX_FORMAT: Appendix and annex sections (3 patterns)
+  - BLOCK_QUOTE: Block quotation detection (3 patterns)
+  - MATH_MODEL: Statistical/mathematical notation (5 patterns)
+  - TEXT_EMPHASIS: Bold, italic, strikethrough (4 patterns)
+  - REFERENCE_APA: APA reference format (5 patterns)
+  - TOC_ENTRY: Table of contents entries (3 patterns)
+  - FOOTNOTE_MARKER: Footnote reference markers (3 patterns)
+  - ABBREVIATION: Abbreviation definitions (3 patterns)
+  - CAPTION_FORMAT: Figure/table caption styling (4 patterns)
+  - PAGE_BREAK: Page break markers (3 patterns)
+  - STATISTICAL_RESULT: Statistical notation (F, t, p, etc.) (5 patterns)
+  - QUESTIONNAIRE: Survey/questionnaire items (4 patterns)
+  - GLOSSARY_ENTRY: Glossary term definitions (3 patterns)
+  - CROSS_REFERENCE: Internal document references (4 patterns)
+  - Updated total pattern count: 97 → 169+ patterns
+
+[December 30, 2025] - Added 5 NEW Pattern Categories
+  - INLINE_FORMATTING: Bold, Italic, Bold+Italic detection (3 patterns)
+  - PAGE_METADATA: Page numbers, headers, footers, document status (4 patterns)
+  - ACADEMIC_METADATA: Author, affiliation, contact info (4 patterns)
+  - MATH_EXPRESSION: LaTeX display/inline math, equations (5 patterns)
+  - FOOTNOTE_ENDNOTE: Footnote section headers and entries (3 patterns)
+  - Updated total pattern count: 78 → 97+ patterns
+
+[December 30, 2025] - Initial documentation created
+  - Documented all 78+ patterns across 15 categories
+  - Added examples and confidence scores for each pattern
+
+================================================================================
+                              NOTES
+================================================================================
+
+1. Patterns are evaluated in priority order:
+   - Tables (highest) -> Headings -> References -> Lists -> Definitions -> Others
+
+2. Heuristic detection supplements pattern matching:
+   - ALL CAPS short text (< 60 chars, <= 6 words) -> H1
+   - Title Case short text (< 60 chars, 2-8 words) -> H2
+
+3. Lines ending with periods are less likely to be headings
+
+4. Context-aware detection considers previous/next lines
+
+5. Each line is processed exactly ONCE to prevent duplication
+
+6. Academic sections requiring page breaks are detected via should_start_on_new_page()
+   and flagged with needs_page_break=True in the analysis result
+
+7. Academic sections requiring centering are detected via should_be_centered()
+   and flagged with should_center=True in the analysis result
+
+================================================================================

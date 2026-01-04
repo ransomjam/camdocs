@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CamDocs</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ocean: {
+                            DEFAULT: '#1E5A8E',
+                            dark: '#0D2F4A',
+                        },
+                        teal: {
+                            DEFAULT: '#00B4A6',
+                            light: '#7DD3C0',
+                        },
+                        amber: {
+                            DEFAULT: '#F2A93B',
+                        },
+                        coral: {
+                            DEFAULT: '#FF6B6B',
+                        },
+                        midnight: '#1A1F2E',
+                        slate: '#4A5568',
+                        mist: '#CBD5E0', // Lighter for better contrast
+                        cloud: '#F7FAFC',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Poppins', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'glow': '0 0 15px rgba(0, 180, 166, 0.3)',
+                        'glass': '0 4px 20px 0 rgba(0, 0, 0, 0.2)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(13, 47, 74, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4A5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+        
+        /* Drag over effect */
+        .drag-over {
+            border-color: #00B4A6 !important;
+            background-color: rgba(0, 180, 166, 0.1) !important;
+            box-shadow: 0 0 20px rgba(0, 180, 166, 0.15);
+        }
+        
+        /* Animation keyframes */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(0, 180, 166, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(0, 180, 166, 0.4); }
+        }
+        
+        .processing-glow {
+            animation: pulse-glow 2s infinite;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0D2F4A;
+            color: #E2E8F0;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.025em;
+        }
+
+        /* Glassmorphism utilities - Professional Grade */
+        .glass-panel {
+            background: rgba(13, 47, 74, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .glass-input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+            color: #F7FAFC;
+        }
+
+        .glass-input:focus {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: #00B4A6;
+            box-shadow: 0 0 0 1px rgba(0, 180, 166, 0.3);
+        }
+        
+        /* Form label helper */
+        .form-label {
+            color: #CBD5E0;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.375rem;
+            display: block;
+        }
+        
+        @media (min-width: 768px) {
+            .form-label {
+                font-size: 1rem;
+            }
+        }
+
+        /* Document Preview Styles - Exact Replica */
+        .document-preview-container {
+            background-color: #525659;
+            padding: 2rem;
+            overflow: auto; /* Allow scrolling in both directions */
+            max-height: 800px;
+            border-radius: 0.75rem;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center; /* Center the page on large screens */
+            align-items: flex-start;
+        }
+
+        .document-page {
+            background-color: white;
+            color: black;
+            /* Fixed A4 dimensions to ensure identical structure on all devices */
+            width: 210mm; 
+            min-height: 297mm;
+            flex-shrink: 0; /* Prevent shrinking on mobile */
+            margin: 0 auto;
+            padding: 25.4mm; /* 1 inch margins */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.5; /* Exact match to backend */
+            text-align: justify;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .document-page p {
+            margin-bottom: 0;
+            text-indent: 0; /* Backend uses first_line_indent for some, but 0 for others. Default to 0 and add class for indent */
+        }
+        
+        .document-page .indent-para {
+            text-indent: 0.5in;
+        }
+
+        .document-page h1 {
+            font-size: 12pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 12pt;
+            color: black;
+        }
+
+        .document-page h2, .document-page h3, .document-page h4 {
+            font-size: 12pt;
+            font-weight: bold;
+            text-align: left;
+            margin-top: 12pt;
+            margin-bottom: 6pt;
+            color: black;
+        }
+
+        .document-page .figure-caption {
+            font-style: italic;
+            text-align: center;
+            margin-top: 6pt;
+            margin-bottom: 12pt;
+        }
+
+        .document-page .table-caption {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 6pt;
+        }
+
+        .document-page table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12pt;
+            font-size: 12pt;
+        }
+
+        .document-page th, .document-page td {
+            border: 1px solid black;
+            padding: 4pt;
+            vertical-align: top;
+        }
+
+        .document-page th {
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .document-page .block-quote {
+            margin-left: 0.5in;
+            margin-right: 0.5in;
+            font-style: italic;
+            margin-top: 6pt;
+            margin-bottom: 6pt;
+        }
+
+        .document-page .hanging-indent {
+            padding-left: 0.5in;
+            text-indent: -0.25in;
+        }
+        
+        .document-page .glossary-indent {
+            padding-left: 0.25in;
+            text-indent: -0.25in;
+        }
+
+        .document-page .math-display {
+            text-align: center;
+            margin-top: 12pt;
+            margin-bottom: 12pt;
+        }
+
+        /* Scanner Animation */
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            15% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        
+        .scanner-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #00B4A6;
+            box-shadow: 0 0 15px #00B4A6, 0 0 30px #00B4A6;
+            animation: scan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            z-index: 20;
+        }
+        
+        .scanner-beam {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(0, 180, 166, 0.3), transparent);
+            animation: scan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            z-index: 19;
+        }
+
+        .tech-grid {
+            background-image: 
+                linear-gradient(rgba(0, 180, 166, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 180, 166, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useRef, useCallback, useEffect } = React;
+
+        // Icon components (simplified SVG icons)
+        const Icons = {
+            Upload: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+            ),
+            FileText: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            ),
+            Download: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+            ),
+            CheckCircle: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            ),
+            SuccessCheck: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            ),
+            Zap: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+            ),
+            Eye: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            ),
+            AlertCircle: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            ),
+            Heading: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 12h12"></path>
+                    <path d="M6 4v16"></path>
+                    <path d="M18 4v16"></path>
+                </svg>
+            ),
+            List: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+            ),
+            Table: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"></path>
+                </svg>
+            ),
+            Book: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+            ),
+            Settings: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            ),
+            Scan: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path></svg>
+            ),
+            Layout: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            ),
+            ChevronDown: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            ),
+            Share: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+            )
+        };
+
+        // API Configuration
+        const API_BASE = 'http://localhost:5000';
+
+        // Fallback Data
+        const FALLBACK_INSTITUTIONS = [
+            {
+            "id": "uba",
+            "name": "The University of Bamenda",
+            "short": "UBa",
+            "logo": "uba_logo.png",
+            "faculties": [
+                {
+                "name": "Faculty of Science",
+                "departments": [
+                    "Biochemistry",
+                    "Botany",
+                    "Chemistry",
+                    "Computer Science",
+                    "Geology",
+                    "Mathematics",
+                    "Physics",
+                    "Zoology"
+                ]
+                },
+                {
+                "name": "Faculty of Arts",
+                "departments": [
+                    "Communication and Development Studies",
+                    "English",
+                    "Geography and Planning",
+                    "History and Archaeology",
+                    "Linguistics",
+                    "Performing and Visual Arts"
+                ]
+                },
+                {
+                "name": "Faculty of Education",
+                "departments": [
+                    "Counseling Psychology",
+                    "Educational Foundations",
+                    "Educational Leadership",
+                    "Physical Education"
+                ]
+                },
+                {
+                "name": "College of Technology",
+                "departments": [
+                    "Agribusiness Technology",
+                    "Agricultural and Environmental Engineering",
+                    "Animal Production Technology",
+                    "Crop Production Technology",
+                    "Electric Power Engineering",
+                    "Electronics",
+                    "Food Science and Technology"
+                ]
+                },
+                {
+                "name": "Higher Institute of Commerce and Management",
+                "departments": [
+                    "Accounting",
+                    "Insurance and Security",
+                    "Management",
+                    "Marketing"
+                ]
+                },
+                {
+                    "name": "National Higher Polytechnic Institute",
+                    "departments": [
+                        "Civil Engineering",
+                        "Computer Engineering",
+                        "Electrical and Electronic Engineering",
+                        "Mechanical Engineering",
+                        "Mining and Mineral Engineering",
+                        "Petroleum Engineering"
+                    ]
+                }
+            ]
+            },
+            {
+            "id": "ub",
+            "name": "University of Buea",
+            "short": "UB",
+            "logo": "ub_logo.png",
+            "faculties": [
+                {
+                "name": "Faculty of Science",
+                "departments": [
+                    "Biochemistry",
+                    "Botany",
+                    "Chemistry",
+                    "Computer Science",
+                    "Environmental Science",
+                    "Geology",
+                    "Mathematics",
+                    "Microbiology",
+                    "Physics",
+                    "Zoology"
+                ]
+                },
+                {
+                "name": "Faculty of Engineering and Technology",
+                "departments": [
+                    "Computer Engineering",
+                    "Electrical and Electronic Engineering",
+                    "Telecommunications Engineering"
+                ]
+                },
+                {
+                    "name": "Faculty of Social and Management Sciences",
+                    "departments": [
+                        "Accounting",
+                        "Banking and Finance",
+                        "Economics",
+                        "Journalism and Mass Communication",
+                        "Management",
+                        "Political Science",
+                        "Sociology and Anthropology",
+                        "Women and Gender Studies"
+                    ]
+                }
+            ]
+            }
+        ];
+
+        // --- Cover Page Generator Component ---
+        const CoverPageGenerator = ({ mergeJobId }) => {
+            const [formData, setFormData] = useState({
+                documentType: 'Assignment',
+                institution: '',
+                faculty: '',
+                department: '',
+                courseCode: '',
+                courseTitle: '',
+                title: '',
+                studentName: '',
+                studentId: '',
+                instructor: '',
+                date: new Date().toISOString().split('T')[0],
+                level: '300 Level',
+                assignmentNumber: '',
+                supervisor: '',
+                coSupervisor: '',
+                fieldSupervisor: '',
+                academicSupervisor: '',
+                defenseDate: '',
+                groupMembers: [],
+                projectDuration: ''
+            });
+
+            const [institutions, setInstitutions] = useState([]);
+            const [faculties, setFaculties] = useState([]);
+            const [departments, setDepartments] = useState([]);
+            const [courseSuggestions, setCourseSuggestions] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [generatedFile, setGeneratedFile] = useState(null);
+            const [previewMode, setPreviewMode] = useState(false);
+            const [showShare, setShowShare] = useState(false);
+            const [shareBlob, setShareBlob] = useState(null);
+
+            // Pre-fetch blob for sharing to prevent timeout
+            React.useEffect(() => {
+                if (generatedFile && generatedFile.downloadUrl) {
+                    fetch(`${API_BASE}${generatedFile.downloadUrl}`)
+                        .then(res => {
+                            if (res.ok) return res.blob();
+                            throw new Error('Fetch failed');
+                        })
+                        .then(blob => setShareBlob(blob))
+                        .catch(err => console.error("Pre-fetch failed", err));
+                } else {
+                    setShareBlob(null);
+                }
+            }, [generatedFile]);
+
+            // Load institutions on mount
+            React.useEffect(() => {
+                fetch(`${API_BASE}/api/institutions`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.institutions && data.institutions.length > 0) {
+                            setInstitutions(data.institutions);
+                        } else {
+                            console.warn("API returned empty institutions, using fallback");
+                            setInstitutions(FALLBACK_INSTITUTIONS);
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Failed to load institutions", err);
+                        setInstitutions(FALLBACK_INSTITUTIONS);
+                    })
+                    .finally(() => {
+                        // Load saved profile after institutions are set (or fallback used)
+                        const saved = localStorage.getItem('coverpage_profile');
+                        if (saved) {
+                            try {
+                                const profile = JSON.parse(saved);
+                                // We need to use the institutions data we just set (or fallback)
+                                // But state update is async. So we use the data directly here.
+                                // However, we can't easily access the data variable in catch/finally if it was in then.
+                                // So we'll do the profile loading inside the then/catch blocks or use a separate effect.
+                                // Actually, let's just do it in a separate effect that depends on institutions.
+                            } catch (e) {
+                                console.error("Error loading profile", e);
+                            }
+                        }
+                    });
+            }, []);
+
+            // Effect to load profile once institutions are available
+            React.useEffect(() => {
+                if (institutions.length > 0) {
+                    const saved = localStorage.getItem('coverpage_profile');
+                    if (saved) {
+                        try {
+                            const profile = JSON.parse(saved);
+                            
+                            // Find the institution object to get faculties
+                            const inst = institutions.find(i => i.id === profile.institution);
+                            const loadedFaculties = inst ? inst.faculties : [];
+                            
+                            // Find the faculty object to get departments
+                            const fac = loadedFaculties.find(f => f.name === profile.faculty);
+                            const loadedDepartments = fac ? fac.departments : [];
+                            
+                            setFaculties(loadedFaculties);
+                            setDepartments(loadedDepartments);
+                            
+                            setFormData(prev => ({
+                                ...prev,
+                                studentName: profile.studentName || '',
+                                studentId: profile.studentId || '',
+                                institution: profile.institution || '',
+                                faculty: profile.faculty || '',
+                                department: profile.department || '',
+                                level: profile.level || '300 Level'
+                            }));
+                        } catch (e) {
+                            console.error("Error loading profile", e);
+                        }
+                    }
+                }
+            }, [institutions]);
+
+            // Handle Institution Change
+            const handleInstitutionChange = (e) => {
+                const instId = e.target.value;
+                const inst = institutions.find(i => i.id === instId);
+                setFormData(prev => ({ ...prev, institution: instId, faculty: '', department: '' }));
+                setFaculties(inst ? inst.faculties : []);
+                setDepartments([]);
+            };
+
+            // Handle Faculty Change
+            const handleFacultyChange = (e) => {
+                const facName = e.target.value;
+                const fac = faculties.find(f => f.name === facName);
+                setFormData(prev => ({ ...prev, faculty: facName, department: '' }));
+                setDepartments(fac ? fac.departments : []);
+            };
+
+            // Handle Course Code Auto-complete
+            const handleCourseCodeChange = (e) => {
+                const val = e.target.value;
+                setFormData(prev => ({ ...prev, courseCode: val }));
+                
+                if (val.length >= 3) {
+                    fetch(`${API_BASE}/api/courses/search?q=${val}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            setCourseSuggestions(data);
+                            // Auto-fill title if exact match
+                            const exact = data.find(c => c.code === val);
+                            if (exact) {
+                                setFormData(prev => ({ ...prev, courseTitle: exact.title }));
+                            }
+                        });
+                } else {
+                    setCourseSuggestions([]);
+                }
+            };
+
+            const handleInputChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+
+            const handleSubmit = async () => {
+                setLoading(true);
+                setShowShare(false);
+                try {
+                    // Save profile
+                    localStorage.setItem('coverpage_profile', JSON.stringify({
+                        studentName: formData.studentName,
+                        studentId: formData.studentId,
+                        institution: formData.institution,
+                        faculty: formData.faculty,
+                        department: formData.department,
+                        level: formData.level
+                    }));
+
+                    const response = await fetch(`${API_BASE}/api/coverpage/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...formData, mergeJobId })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        setGeneratedFile(data);
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Failed to generate cover page');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Share Handler
+            const handleShare = async () => {
+                if (!generatedFile) return;
+                
+                try {
+                    let blob = shareBlob;
+                    if (!blob) {
+                        const response = await fetch(`${API_BASE}${generatedFile.downloadUrl}`);
+                        if (!response.ok) throw new Error('File download failed');
+                        blob = await response.blob();
+                    }
+
+                    const fileToShare = new File([blob], generatedFile.filename, { type: blob.type });
+                    
+                    if (navigator.share && navigator.canShare({ files: [fileToShare] })) {
+                        await navigator.share({
+                            files: [fileToShare],
+                            title: 'Cover Page Document',
+                            text: 'Here is your document with cover page from CamDocs.'
+                        });
+                    } else {
+                        alert('Sharing is not supported on this device. The file is available for download.');
+                    }
+                } catch (err) {
+                    console.error("Share failed", err);
+                    if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+                        alert('Failed to share: ' + err.message);
+                    }
+                }
+            };
+
+            // Render Fields based on Document Type
+            const renderDynamicFields = () => {
+                const type = formData.documentType;
+                
+                if (type === 'Assignment') {
+                    return (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="form-label">Level</label>
+                                    <div className="relative">
+                                        <select name="level" value={formData.level} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 pr-8 text-teal focus:border-teal outline-none appearance-none cursor-pointer text-base">
+                                            <option value="200 Level" className="bg-ocean-dark text-white">200 Level</option>
+                                            <option value="300 Level" className="bg-ocean-dark text-white">300 Level</option>
+                                            <option value="400 Level" className="bg-ocean-dark text-white">400 Level</option>
+                                            <option value="500 Level" className="bg-ocean-dark text-white">500 Level</option>
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-teal">
+                                            <Icons.ChevronDown />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="form-label">Instructor</label>
+                                    <input type="text" name="instructor" value={formData.instructor} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" placeholder="Dr. Charles Smith" />
+                                </div>
+                            </div>
+                        </>
+                    );
+                } else if (type === 'Thesis' || type === 'Dissertation' || type === 'Research Proposal') {
+                    return (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="form-label">Supervisor</label>
+                                    <input type="text" name="supervisor" value={formData.supervisor} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" placeholder="Dr. Supervisor" />
+                                </div>
+                                <div>
+                                    <label className="form-label">Co-Supervisor (Optional)</label>
+                                    <input type="text" name="coSupervisor" value={formData.coSupervisor} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" placeholder="Prof. Co-Supervisor" />
+                                </div>
+                            </div>
+                        </>
+                    );
+                } else if (type === 'Internship Report') {
+                    return (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="form-label">Academic Supervisor</label>
+                                    <input type="text" name="academicSupervisor" value={formData.academicSupervisor} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" placeholder="Dr. Academic Supervisor" />
+                                </div>
+                                <div>
+                                    <label className="form-label">Field Supervisor</label>
+                                    <input type="text" name="fieldSupervisor" value={formData.fieldSupervisor} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" placeholder="Mr./Ms. Field Supervisor" />
+                                </div>
+                                <div>
+                                    <label className="form-label">Level</label>
+                                    <div className="relative">
+                                        <select name="level" value={formData.level} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 pr-8 text-teal focus:border-teal outline-none appearance-none cursor-pointer text-base">
+                                            <option value="300 Level" className="bg-ocean-dark text-white">300 Level</option>
+                                            <option value="400 Level" className="bg-ocean-dark text-white">400 Level</option>
+                                            <option value="500 Level" className="bg-ocean-dark text-white">500 Level</option>
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-teal">
+                                            <Icons.ChevronDown />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    );
+                }
+                return null;
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <div className="glass-panel rounded-xl p-4 md:p-6">
+                        <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 flex items-center gap-3 font-display border-b border-white/10 pb-3 md:pb-4">
+                            Provide Cover Page info
+                        </h2>
+
+                        <div className="space-y-4">
+                            {/* Document Type */}
+                            <div>
+                                <label className="form-label">Document Type *</label>
+                                <div className="relative">
+                                    <select name="documentType" value={formData.documentType} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 pr-8 text-teal focus:border-teal outline-none appearance-none cursor-pointer text-base">
+                                        <option value="Assignment" className="bg-ocean-dark text-white">Assignment</option>
+                                        <option value="Internship Report" className="bg-ocean-dark text-white">Internship Report</option>
+                                        <option value="Thesis" className="bg-ocean-dark text-white">Thesis / Dissertation</option>
+                                        <option value="Research Proposal" className="bg-ocean-dark text-white">Research Proposal</option>
+                                    </select>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-teal">
+                                        <Icons.ChevronDown />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Institution & Faculty */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="form-label">Institution *</label>
+                                    <div className="relative">
+                                        <select name="institution" value={formData.institution} onChange={handleInstitutionChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 pr-8 text-teal focus:border-teal outline-none appearance-none cursor-pointer text-base">
+                                            <option value="" className="bg-ocean-dark text-white">Select Institution</option>
+                                            {institutions.map(inst => (
+                                                <option key={inst.id} value={inst.id} className="bg-ocean-dark text-white">{inst.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-teal">
+                                            <Icons.ChevronDown />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="form-label">Faculty/School *</label>
+                                    <div className="relative">
+                                        <select name="faculty" value={formData.faculty} onChange={handleFacultyChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 pr-8 text-teal focus:border-teal outline-none appearance-none cursor-pointer text-base" disabled={!formData.institution}>
+                                            <option value="" className="bg-ocean-dark text-white">Select Faculty</option>
+                                            {faculties.map(fac => (
+                                                <option key={fac.name} value={fac.name} className="bg-ocean-dark text-white">{fac.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-teal">
+                                            <Icons.ChevronDown />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Department & Course */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className={['Assignment'].includes(formData.documentType) ? "" : "md:col-span-2"}>
+                                    <label className="form-label">Department *</label>
+                                    <div className="relative">
+                                        <select name="department" value={formData.department} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 pr-8 text-teal focus:border-teal outline-none appearance-none cursor-pointer text-base" disabled={!formData.faculty}>
+                                            <option value="" className="bg-ocean-dark text-white">Select Department</option>
+                                            {departments.map(dept => (
+                                                <option key={dept} value={dept} className="bg-ocean-dark text-white">{dept}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-teal">
+                                            <Icons.ChevronDown />
+                                        </div>
+                                    </div>
+                                </div>
+                                {['Assignment'].includes(formData.documentType) && (
+                                    <div className="relative">
+                                        <label className="form-label">Course Code</label>
+                                        <input 
+                                            type="text" 
+                                            name="courseCode" 
+                                            value={formData.courseCode} 
+                                            onChange={handleCourseCodeChange} 
+                                            className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" 
+                                            placeholder="e.g. COMP301"
+                                            autoComplete="off"
+                                        />
+                                        {courseSuggestions.length > 0 && (
+                                            <div className="absolute z-10 w-full bg-ocean-dark border border-slate rounded-lg mt-2 shadow-2xl max-h-48 overflow-y-auto p-2">
+                                                {courseSuggestions.map(course => (
+                                                    <div 
+                                                        key={course.code} 
+                                                        className="p-2 hover:bg-ocean rounded-md cursor-pointer text-teal text-sm transition-colors"
+                                                        onClick={() => {
+                                                            setFormData(prev => ({ ...prev, courseCode: course.code, courseTitle: course.title }));
+                                                            setCourseSuggestions([]);
+                                                        }}
+                                                    >
+                                                        <span className="font-bold">{course.code}</span> - {course.title}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Course Title & Assignment Title */}
+                            {['Assignment'].includes(formData.documentType) && (
+                                <div>
+                                    <label className="form-label">Course Title</label>
+                                    <input type="text" name="courseTitle" value={formData.courseTitle} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" placeholder="Data Structures and Algorithms" />
+                                </div>
+                            )}
+                            <div>
+                                <label className="form-label">Title *</label>
+                                <input type="text" name="title" value={formData.title} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" placeholder="e.g. Binary Search Tree Implementation" />
+                            </div>
+
+                            {/* Dynamic Fields */}
+                            {renderDynamicFields()}
+
+                            {/* Student Info */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="form-label">Student Name *</label>
+                                    <input type="text" name="studentName" value={formData.studentName} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" placeholder="John Doe" />
+                                </div>
+                                <div>
+                                    <label className="form-label">Matriculation Number *</label>
+                                    <input type="text" name="studentId" value={formData.studentId} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" placeholder="FE21A001" />
+                                </div>
+                            </div>
+
+                            {/* Date */}
+                            <div>
+                                <label className="form-label">Submission Date</label>
+                                <input type="date" name="date" value={formData.date} onChange={handleInputChange} className="w-full glass-input rounded-lg p-2 md:p-2.5 text-white placeholder-white/30 focus:border-teal outline-none text-base" />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-4 pt-4">
+                                <button 
+                                    onClick={handleSubmit} 
+                                    disabled={loading}
+                                    className="flex-1 bg-gradient-to-r from-ocean to-teal text-white py-2 md:py-3 rounded-lg font-semibold text-base shadow-lg shadow-ocean/30 hover:shadow-ocean/50 hover:scale-[1.01] hover:from-ocean-dark hover:to-ocean transition-all disabled:opacity-50 disabled:hover:scale-100"
+                                >
+                                    {loading ? 'Creating...' : 'Create Cover Page'}
+                                </button>
+                            </div>
+
+                            {/* Result */}
+                            {generatedFile && (
+                                <div className="mt-6 bg-teal/10 border border-teal/30 rounded-xl p-3 md:p-4 flex flex-col gap-4 backdrop-blur-sm">
+                                    <div className="flex items-center gap-2 md:gap-3">
+                                        <div className="bg-teal/20 p-1.5 rounded-full">
+                                            <span className="text-teal"><Icons.CheckCircle /></span>
+                                        </div>
+                                        <span className="text-teal-light font-medium text-sm md:text-base">
+                                            {mergeJobId ? 'Cover Page + Document Generated!' : `${generatedFile.filename} generated!`}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <a 
+                                            href={`${API_BASE}${generatedFile.downloadUrl}?inline=true`} 
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={() => setShowShare(true)}
+                                            className="flex items-center justify-center gap-2 bg-teal hover:bg-teal-light text-white px-3 py-2 rounded-lg text-sm md:text-base font-bold shadow-lg shadow-teal/20 transition-all hover:-translate-y-0.5 text-center"
+                                        >
+                                            <span className="scale-75 md:scale-100"><Icons.Download /></span>
+                                            Open
+                                        </a>
+                                        
+                                        {showShare && (
+                                            <button 
+                                                onClick={handleShare}
+                                                className="flex items-center justify-center gap-2 bg-ocean hover:bg-ocean-dark text-white px-3 py-2 rounded-lg text-sm md:text-base font-bold shadow-lg shadow-ocean/20 transition-all hover:-translate-y-0.5"
+                                            >
+                                                <span className="scale-75 md:scale-100"><Icons.Share /></span>
+                                                Share
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Document Preview Component
+        const DocumentPreview = ({ data }) => {
+            if (!data || data.length === 0) {
+                return (
+                    <div className="text-center text-mist p-12 bg-black/20 rounded-xl border border-white/5">
+                        <p>No preview data available.</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="document-preview-container custom-scrollbar">
+                    <div className="document-page">
+                        {data.map((section, idx) => (
+                            <div key={idx} className="section-block">
+                                {/* Heading */}
+                                {section.heading && section.heading !== 'Untitled' && (
+                                    section.level === 1 ? (
+                                        <h1>{section.heading}</h1>
+                                    ) : (
+                                        <div className={`font-bold text-left mb-3 mt-4 text-[12pt]`}>
+                                            {section.heading}
+                                        </div>
+                                    )
+                                )}
+
+                                {/* Content */}
+                                {section.content && section.content.map((item, i) => {
+                                    // Paragraph
+                                    if (item.type === 'paragraph') {
+                                        return <p key={i} className="mb-0">{item.text}</p>;
+                                    }
+                                    
+                                    // Block Quote
+                                    if (item.type === 'block_quote') {
+                                        return <p key={i} className="block-quote">{item.text.replace(/^[>\s]+/, '')}</p>;
+                                    }
+
+                                    // Abbreviation
+                                    if (item.type === 'abbreviation') {
+                                        const match = item.text.match(/([A-Z]{2,})\s*[-–:=]\s*(.+)/);
+                                        if (match) {
+                                            return (
+                                                <p key={i} className="mb-0">
+                                                    <strong>{match[1]}</strong> – {match[2]}
+                                                </p>
+                                            );
+                                        }
+                                        return <p key={i} className="mb-0">{item.text}</p>;
+                                    }
+
+                                    // Copyright
+                                    if (item.type === 'copyright_content') {
+                                        return <p key={i} className="text-center italic mb-0">{item.text}</p>;
+                                    }
+
+                                    // Signature Line
+                                    if (item.type === 'signature_line') {
+                                        return (
+                                            <p key={i} className="text-right mt-8 mb-0">
+                                                {item.text || '________________________'}
+                                            </p>
+                                        );
+                                    }
+
+                                    // Running Header
+                                    if (item.type === 'running_header') {
+                                        return <p key={i} className="text-center text-gray-500 mb-4 text-sm">{item.text}</p>;
+                                    }
+
+                                    // Math
+                                    if (item.type === 'math_expression' || item.type === 'math_model') {
+                                        const isDisplay = item.subtype === 'display_math' || item.type === 'math_model';
+                                        const cleanText = item.text.replace(/^\$\$|\$\$$|^\$|\$$|^\\\[|\\\]$|^\\\(|\\\)$/g, '');
+                                        return (
+                                            <p key={i} className={isDisplay ? "math-display" : "mb-0"}>
+                                                {cleanText}
+                                            </p>
+                                        );
+                                    }
+
+                                    // Footnote / Glossary
+                                    if (item.type === 'footnote_entry' || item.type === 'footnote_endnote') {
+                                        return <p key={i} className="hanging-indent">{item.text}</p>;
+                                    }
+                                    if (item.type === 'glossary_entry') {
+                                        return (
+                                            <p key={i} className="glossary-indent">
+                                                {item.term ? <strong>{item.term}: </strong> : null}
+                                                {item.definition || item.text}
+                                            </p>
+                                        );
+                                    }
+                                    
+                                    // Definition (Legacy)
+                                    if (item.type === 'definition') {
+                                        return (
+                                            <p key={i} className="glossary-indent">
+                                                <strong>{item.term}:</strong> {item.definition}
+                                            </p>
+                                        );
+                                    }
+                                    
+                                    // Lists
+                                    if (item.type === 'bullet_list') {
+                                        return (
+                                            <ul key={i} className="list-disc pl-12 mb-4">
+                                                {item.items.map((li, l) => {
+                                                    // Handle both string items and object items (enhanced bullets)
+                                                    const content = typeof li === 'object' && li !== null 
+                                                        ? (li.content || li.text || JSON.stringify(li)) 
+                                                        : li;
+                                                    return <li key={l} className="pl-2">{content}</li>;
+                                                })}
+                                            </ul>
+                                        );
+                                    }
+                                    if (item.type === 'numbered_list') {
+                                        return (
+                                            <ol key={i} className="list-decimal pl-12 mb-4">
+                                                {item.items.map((li, l) => {
+                                                    // Handle both string items and object items
+                                                    const content = typeof li === 'object' && li !== null 
+                                                        ? (li.content || li.text || JSON.stringify(li)) 
+                                                        : li;
+                                                    return <li key={l} className="pl-2">{content}</li>;
+                                                })}
+                                            </ol>
+                                        );
+                                    }
+
+                                    // Key Points (Warning, Note, etc.)
+                                    if (item.type === 'key_point') {
+                                        const isExample = item.key_point_type === 'example';
+                                        return (
+                                            <p key={i} className={`my-2 ${isExample ? 'italic' : 'font-bold'}`}>
+                                                {item.emoji_prefix} {item.text}
+                                            </p>
+                                        );
+                                    }
+
+                                    // Captions
+                                    if (item.type === 'caption_format' || item.type === 'figure_equation') {
+                                        // Check if it's a figure or table caption based on text content
+                                        const isTable = /^(Table|Tbl)/i.test(item.text);
+                                        return (
+                                            <p key={i} className={isTable ? "table-caption" : "figure-caption"}>
+                                                {item.text}
+                                            </p>
+                                        );
+                                    }
+
+                                    // Tables
+                                    if (item.type === 'table' || (item.rows && item.rows.length > 0)) {
+                                        return (
+                                            <div key={i} className="mb-4">
+                                                {item.caption && <p className="table-caption">{item.caption}</p>}
+                                                <table style={{lineHeight: '1.0'}}>
+                                                    <tbody>
+                                                        {item.rows.map((row, r) => (
+                                                            <tr key={r}>
+                                                                {row.map((cell, c) => (
+                                                                    r === 0 ? <th key={c}>{cell}</th> : <td key={c}>{cell}</td>
+                                                                ))}
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        );
+                                    }
+
+                                    return null;
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // Main Application Component
+        const PatternDocFormatter = () => {
+            const [viewMode, setViewMode] = useState('formatter'); // 'formatter' or 'coverpage'
+            const [file, setFile] = useState(null);
+            const [processing, setProcessing] = useState(false);
+            const [progress, setProgress] = useState(0);
+            const [status, setStatus] = useState('');
+            const [result, setResult] = useState(null);
+            const [preview, setPreview] = useState(null);
+            const [error, setError] = useState(null);
+            const [dragOver, setDragOver] = useState(false);
+            const [activeTab, setActiveTab] = useState('preview');
+            const [mergeJobId, setMergeJobId] = useState(null);
+            const [pastedText, setPastedText] = useState('');
+            const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+            const [elapsedTime, setElapsedTime] = useState(0);
+            const [showShare, setShowShare] = useState(false);
+            const fileInputRef = useRef(null);
+            const [shareBlob, setShareBlob] = useState(null);
+
+            // Pre-fetch blob for sharing
+            useEffect(() => {
+                if (result && result.job_id) {
+                    fetch(`${API_BASE}/download/${result.job_id}`)
+                        .then(res => {
+                            if (res.ok) return res.blob();
+                            throw new Error('Fetch failed');
+                        })
+                        .then(blob => setShareBlob(blob))
+                        .catch(err => console.error("Pre-fetch failed", err));
+                } else {
+                    setShareBlob(null);
+                }
+            }, [result]);
+
+            // Timer effect
+            useEffect(() => {
+                let interval;
+                if (processing) {
+                    const startTime = Date.now();
+                    interval = setInterval(() => {
+                        setElapsedTime(Date.now() - startTime);
+                    }, 10);
+                } else {
+                    setElapsedTime(0);
+                }
+                return () => clearInterval(interval);
+            }, [processing]);
+
+            // Handle file selection
+            const handleFileSelect = useCallback(async (selectedFile) => {
+                if (!selectedFile) return;
+
+                // Validate file type
+                const validTypes = ['.txt', '.docx', '.md', '.doc'];
+                const fileExt = '.' + selectedFile.name.split('.').pop().toLowerCase();
+                
+                if (!validTypes.includes(fileExt)) {
+                    setError('Invalid file type. Please upload .txt, .docx, or .md files.');
+                    return;
+                }
+
+                setFile(selectedFile);
+                setProcessing(true);
+                setProgress(0);
+                setStatus('Uploading file...');
+                setResult(null);
+                setPreview(null);
+                setError(null);
+                setShowSuccessMessage(false);
+
+                // Simulate initial progress
+                let progressInterval = setInterval(() => {
+                    setProgress(prev => Math.min(prev + 10, 90));
+                }, 200);
+
+                try {
+                    // Create form data
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+
+                    setStatus('Processing document with pattern matching...');
+
+                    // Upload to backend
+                    const response = await fetch(`${API_BASE}/upload`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    clearInterval(progressInterval);
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Upload failed');
+                    }
+
+                    const data = await response.json();
+                    
+                    setProgress(100);
+                    setStatus('Complete!');
+                    setResult(data);
+                    setPreview(data.preview || '');
+                    setShowSuccessMessage(true);
+
+                } catch (err) {
+                    clearInterval(progressInterval);
+                    console.error('Upload error:', err);
+                    setError(err.message || 'Failed to process document. Make sure the backend server is running.');
+                    setStatus('Error occurred');
+                } finally {
+                    setProcessing(false);
+                }
+            }, []);
+
+            const handlePasteSubmit = () => {
+                if (!pastedText.trim()) return;
+                
+                const blob = new Blob([pastedText], { type: 'text/plain' });
+                const file = new File([blob], "pasted_document.txt", { type: "text/plain" });
+                handleFileSelect(file);
+            };
+
+            // File input change handler
+            const handleFileInputChange = (event) => {
+                const selectedFile = event.target.files[0];
+                handleFileSelect(selectedFile);
+            };
+
+            // Drag and drop handlers
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                setDragOver(true);
+            };
+
+            const handleDragLeave = (e) => {
+                e.preventDefault();
+                setDragOver(false);
+            };
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const droppedFile = e.dataTransfer.files[0];
+                handleFileSelect(droppedFile);
+            };
+
+            // Download handler
+            const handleDownload = async () => {
+                if (!result || !result.job_id) return;
+
+                // Show share option
+                setShowShare(true);
+
+                // Open in new tab with inline disposition
+                window.open(`${API_BASE}/download/${result.job_id}?inline=true`, '_blank');
+            };
+
+            // Share handler
+            const handleShare = async () => {
+                if (!result || !result.job_id) return;
+                
+                try {
+                    setStatus('Preparing to share...');
+                    
+                    let blob = shareBlob;
+                    if (!blob) {
+                        const response = await fetch(`${API_BASE}/download/${result.job_id}`);
+                        if (!response.ok) throw new Error('Download failed');
+                        blob = await response.blob();
+                    }
+
+                    const fileToShare = new File([blob], `formatted_${file?.name || 'document'}.docx`, { type: blob.type });
+                    
+                    if (navigator.share && navigator.canShare({ files: [fileToShare] })) {
+                        await navigator.share({
+                            files: [fileToShare],
+                            title: 'Formatted Document',
+                            text: 'Here is your formatted document from CamDocs.'
+                        });
+                        setStatus('Shared successfully!');
+                    } else {
+                        // Fallback for desktop or unsupported browsers
+                        alert('Sharing is not supported on this device/browser. The file has been downloaded.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    // Don't show error if user cancelled share
+                    if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+                        setError('Failed to share: ' + err.message);
+                    }
+                } finally {
+                    setStatus('');
+                }
+            };
+
+            // Reset handler
+            const handleReset = () => {
+                setFile(null);
+                setProcessing(false);
+                setProgress(0);
+                setStatus('');
+                setResult(null);
+                setPreview(null);
+                setError(null);
+                setMergeJobId(null);
+                setShowSuccessMessage(false);
+                setShowShare(false);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            };
+
+            // Stats data for display
+            const statsData = result ? [
+                { label: 'Headings', value: result.stats?.headings || 0, icon: Icons.Heading, color: 'text-teal' },
+                { label: 'Paragraphs', value: result.stats?.paragraphs || 0, icon: Icons.FileText, color: 'text-ocean' },
+                { label: 'References', value: result.stats?.references || 0, icon: Icons.Book, color: 'text-teal-light' },
+                { label: 'Tables', value: result.stats?.tables || 0, icon: Icons.Table, color: 'text-amber' },
+                { label: 'Lists', value: result.stats?.lists || 0, icon: Icons.List, color: 'text-coral' },
+            ] : [];
+
+            return (
+                <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-ocean-dark via-[#0F385C] to-midnight p-4 md:p-6 text-white flex flex-col">
+                    <div className="max-w-5xl mx-auto w-full flex-1 flex flex-col">
+                        {/* Header - Compact & Modern */}
+                        <div className="text-center mb-6 pt-2 relative">
+                            <div className="flex flex-row items-center justify-center gap-3 mb-6">
+                                <div className="h-10 w-10 md:h-12 md:w-12 bg-gradient-to-r from-ocean to-teal rounded-lg flex items-center justify-center shadow-lg shadow-ocean/30 p-1">
+                                    <img src="logo/logo.png" alt="CamDocs Logo" className="h-full w-full object-contain" />
+                                </div>
+                                <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight font-display">
+                                    CamDocs
+                                </h1>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                                <p className="text-white/90 text-base md:text-xl font-semibold tracking-wide">
+                                    Automatic Document Formatting
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-2 text-xs md:text-sm text-teal font-bold uppercase tracking-wider opacity-80">
+                                    <span>Projects</span>
+                                    <span className="text-white/20">•</span>
+                                    <span>Thesis</span>
+                                    <span className="text-white/20">•</span>
+                                    <span>Reports</span>
+                                    <span className="text-white/20">•</span>
+                                    <span>Assignments</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Navigation - Compact */}
+                        <div className="max-w-xs mx-auto mb-6 w-full">
+                            <div className="bg-black/20 p-1 rounded-lg flex relative backdrop-blur-md border border-white/10 shadow-lg">
+                                <button 
+                                    onClick={() => setViewMode('formatter')}
+                                    className={`flex-1 py-2 px-3 md:py-2.5 md:px-4 rounded-md text-sm md:text-base font-bold transition-all duration-200 ${
+                                        viewMode === 'formatter' 
+                                        ? 'bg-gradient-to-r from-ocean to-teal text-white shadow-md' 
+                                        : 'text-mist hover:text-white hover:bg-white/5'
+                                    }`}
+                                >
+                                    Formatter
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode('coverpage')}
+                                    className={`flex-1 py-2 px-3 md:py-2.5 md:px-4 rounded-md text-sm md:text-base font-bold transition-all duration-200 ${
+                                        viewMode === 'coverpage' 
+                                        ? 'bg-gradient-to-r from-ocean to-teal text-white shadow-md' 
+                                        : 'text-mist hover:text-white hover:bg-white/5'
+                                    }`}
+                                >
+                                    Cover Page
+                                </button>
+                            </div>
+                        </div>
+
+                        {viewMode === 'coverpage' ? (
+                            <CoverPageGenerator mergeJobId={mergeJobId} />
+                        ) : (
+                            <>
+
+                                {/* Error Alert */}
+                                {error && (
+                                    <div className="bg-red-500/20 border border-red-500/50 rounded-2xl p-4 mb-8 flex items-center gap-4 backdrop-blur-md shadow-lg shadow-red-500/10">
+                                        <span className="text-red-400 bg-red-500/20 p-2 rounded-full">
+                                            <Icons.AlertCircle />
+                                        </span>
+                                        <div>
+                                            <p className="text-red-300 font-bold">Error</p>
+                                            <p className="text-red-200 text-sm">{error}</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => setError(null)}
+                                            className="ml-auto text-red-300 hover:text-red-100 p-2 hover:bg-red-500/20 rounded-full transition-colors"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Upload Area */}
+                                <div className={`glass-panel rounded-xl p-5 mb-6 transition-all duration-500 ${processing ? 'processing-glow' : 'hover:shadow-glow'}`}>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept=".txt,.docx,.md,.doc"
+                                        onChange={handleFileInputChange}
+                                        className="hidden"
+                                    />
+                                    
+                                    <div
+                                        onClick={() => !processing && !showSuccessMessage && fileInputRef.current?.click()}
+                                        onDragOver={!showSuccessMessage ? handleDragOver : undefined}
+                                        onDragLeave={!showSuccessMessage ? handleDragLeave : undefined}
+                                        onDrop={!showSuccessMessage ? handleDrop : undefined}
+                                        className={`w-full py-4 border-2 rounded-xl transition-all duration-300 group relative overflow-hidden
+                                            ${showSuccessMessage 
+                                                ? 'border-teal bg-teal/10 cursor-default' 
+                                                : `border-dashed cursor-pointer ${dragOver ? 'drag-over border-teal bg-teal/10' : 'border-white/10 hover:border-teal/50 hover:bg-white/5'}`
+                                            }
+                                            ${processing ? 'border-teal/50 bg-black/20 cursor-wait border-solid' : ''}`}
+                                    >
+                                        {processing ? (
+                                            <div className="relative w-full h-48 md:h-64 flex flex-col items-center justify-center overflow-hidden">
+                                                {/* Tech Grid Background */}
+                                                <div className="absolute inset-0 tech-grid opacity-30"></div>
+                                                
+                                                {/* Corner Brackets */}
+                                                <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-teal"></div>
+                                                <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-teal"></div>
+                                                <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-teal"></div>
+                                                <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-teal"></div>
+
+                                                {/* Document Icon */}
+                                                <div className="relative z-10 text-white/20 scale-[1.5] md:scale-[2]">
+                                                    <Icons.FileText />
+                                                </div>
+                                                
+                                                {/* Scanner Elements */}
+                                                <div className="scanner-line"></div>
+                                                <div className="scanner-beam"></div>
+                                                
+                                                {/* Status Text */}
+                                                <div className="absolute bottom-4 left-0 right-0 text-center">
+                                                    <p className="text-teal font-mono text-xs tracking-widest animate-pulse">Processing</p>
+                                                </div>
+                                            </div>
+                                        ) : showSuccessMessage ? (
+                                            <div className="flex flex-col items-center justify-center py-1">
+                                                <div className="mb-2 text-teal">
+                                                    <Icons.SuccessCheck />
+                                                </div>
+                                                <p className="text-sm md:text-base font-medium text-white mb-0.5">
+                                                    Done, Edited successfully
+                                                </p>
+                                                <p className="text-mist text-xs text-center px-4 break-words max-w-md mx-auto">
+                                                    {file ? file.name : 'Document'} processed
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className={`p-2 rounded-full bg-white/5 group-hover:bg-teal/10 transition-colors duration-300`}>
+                                                    <span className="text-teal group-hover:scale-105 transition-transform duration-300 block">
+                                                        <Icons.Upload />
+                                                    </span>
+                                                </div>
+                                                <div className="text-white text-center">
+                                                    <p className="text-lg md:text-xl font-normal mb-1 group-hover:text-teal transition-colors">
+                                                        {file && !result ? file.name : 'Click to upload or drop file here'}
+                                                    </p>
+                                                    <p className="text-mist text-sm font-normal">
+                                                        Supports .txt, .docx, .md files • Max 50MB
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Timer */}
+                                    {processing && (
+                                        <div className="mt-4 text-center">
+                                            <p className="text-teal font-mono text-xl font-bold tracking-widest tabular-nums" style={{ textShadow: '0 0 10px rgba(0, 180, 166, 0.5)' }}>
+                                                {(() => {
+                                                    const mins = Math.floor(elapsedTime / 60000).toString().padStart(2, '0');
+                                                    const secs = Math.floor((elapsedTime % 60000) / 1000).toString().padStart(2, '0');
+                                                    const ms = Math.floor((elapsedTime % 1000) / 10).toString().padStart(2, '0');
+                                                    return `${mins}:${secs}:${ms}`;
+                                                })()}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Paste Text Area - Only show if no result */}
+                                    {!result && !processing && (
+                                        <div className="mt-4 border-t border-white/10 pt-4">
+                                            <p className="text-center text-mist text-xs mb-2 font-bold uppercase tracking-wider">OR PASTE TEXT HERE</p>
+                                            <div className="relative">
+                                                <textarea
+                                                    autoFocus
+                                                    value={pastedText}
+                                                    onChange={(e) => setPastedText(e.target.value)}
+                                                    placeholder="Paste your document content here..."
+                                                    className="w-full h-64 glass-input rounded-xl p-4 text-sm md:text-base text-white placeholder-white/30 focus:border-teal outline-none resize-y"
+                                                />
+                                                {pastedText && (
+                                                    <button
+                                                        onClick={handlePasteSubmit}
+                                                        className="absolute bottom-4 right-4 bg-teal text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-teal-light transition-colors shadow-lg"
+                                                    >
+                                                        PROCESS TEXT
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Action buttons */}
+                                    {result && (
+                                        <div className="grid grid-cols-2 gap-3 md:gap-4 mt-6">
+                                            {showShare ? (
+                                                <button
+                                                    onClick={handleShare}
+                                                    className="flex items-center justify-center gap-1 md:gap-2 px-2 py-2 md:px-6 md:py-3 bg-gradient-to-r from-teal to-teal-light text-white rounded-lg hover:from-teal-light hover:to-teal transition-all duration-300 shadow-lg hover:shadow-teal/50 hover:-translate-y-0.5 font-semibold text-xs md:text-base w-full whitespace-nowrap"
+                                                >
+                                                    <span className="scale-75 md:scale-100"><Icons.Share /></span>
+                                                    Share Document
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={handleDownload}
+                                                    className="flex items-center justify-center gap-1 md:gap-2 px-2 py-2 md:px-6 md:py-3 bg-gradient-to-r from-ocean to-teal text-white rounded-lg hover:from-ocean-dark hover:to-ocean transition-all duration-300 shadow-lg hover:shadow-ocean/50 hover:-translate-y-0.5 font-semibold text-xs md:text-base w-full whitespace-nowrap"
+                                                >
+                                                    <span className="scale-75 md:scale-100"><Icons.Download /></span>
+                                                    Open
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    const currentJobId = result.job_id;
+                                                    // Reset UI but preserve job ID for cover page
+                                                    setFile(null);
+                                                    setProcessing(false);
+                                                    setProgress(0);
+                                                    setStatus('');
+                                                    setResult(null);
+                                                    setPreview(null);
+                                                    setError(null);
+                                                    setShowSuccessMessage(false);
+                                                    setShowShare(false);
+                                                    if (fileInputRef.current) {
+                                                        fileInputRef.current.value = '';
+                                                    }
+                                                    
+                                                    setMergeJobId(currentJobId);
+                                                    setViewMode('coverpage');
+                                                }}
+                                                className="flex items-center justify-center gap-1 md:gap-2 px-2 py-2 md:px-6 md:py-3 bg-gradient-to-r from-ocean to-teal text-white rounded-lg hover:from-ocean-dark hover:to-ocean transition-all duration-300 shadow-lg hover:shadow-ocean/50 hover:-translate-y-0.5 font-semibold text-xs md:text-base w-full whitespace-nowrap"
+                                            >
+                                                Add Cover Page
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Results */}
+                                {result && (
+                                    <div className="space-y-6">
+                                        {/* Document Structure Only */}
+                                        <div className="glass-panel rounded-xl overflow-hidden">
+                                            <div className="flex border-b border-white/10 bg-black/20">
+                                                <div className="flex-1 py-3 px-4 md:py-4 md:px-6 text-center font-bold text-xs md:text-sm bg-white/5 text-teal border-b-2 border-teal">
+                                                    <span className="flex items-center justify-center gap-2">
+                                                        <Icons.List />
+                                                        Document Outline
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 md:p-6">
+                                                <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                                                    {result.structured?.filter((section, idx) => !(idx === 0 && section.heading === 'Document')).map((section, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            className="bg-white/5 rounded-lg p-2 md:p-3 border border-white/5 hover:bg-white/10 transition-colors flex items-center gap-3 group"
+                                                        >
+                                                            <span className={`px-2 py-1 rounded text-[9px] md:text-[10px] font-bold font-mono shadow-sm ${
+                                                                section.level === 1 ? 'bg-ocean text-white' :
+                                                                section.level === 2 ? 'bg-teal text-white' :
+                                                                'bg-slate text-white'
+                                                            }`}>
+                                                                H{section.level}
+                                                            </span>
+                                                            <span className="text-white text-xs md:text-sm font-medium flex-1 truncate group-hover:text-teal transition-colors">
+                                                                {section.heading}
+                                                            </span>
+                                                            <span className="text-mist text-[10px] bg-black/20 px-2 py-1 rounded">
+                                                                {section.content?.length || 0} items
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Features - shown when no result */}
+                                {/* Removed as per user request */}
+
+                                {/* Pattern Recognition Info */}
+                                {/* Removed as per user request */}
+
+                                {/* Footer */}
+                                {/* Removed as per user request */}
+                            </>
+                        )}
+
+                        {/* Footer */}
+                        <div className="mt-auto pt-12 pb-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="text-mist/50 font-mono text-xs">
+                                CamDocs Version 1.0
+                            </div>
+                            <a 
+                                href="https://wa.me/237671308991" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 bg-white/5 hover:bg-teal/10 text-mist hover:text-teal px-4 py-2 rounded-full transition-all duration-300 border border-white/10 hover:border-teal/30 group backdrop-blur-sm hover:shadow-[0_0_15px_rgba(0,180,166,0.2)]"
+                            >
+                                <div className="p-1 rounded-full bg-white/5 group-hover:bg-teal/20 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-mist group-hover:text-teal transition-colors">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                </div>
+                                <span className="font-medium text-sm tracking-wide">Contact Support</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the application
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<PatternDocFormatter />);
+    </script>
+</body>
+</html>

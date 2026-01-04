@@ -1,0 +1,121 @@
+{
+  "institutions": [
+    {
+      "id": "uba",
+      "name": "The University of Bamenda",
+      "short": "UBa",
+      "logo": "uba_logo.png",
+      "faculties": [
+        {
+          "name": "Faculty of Science",
+          "departments": [
+            "Biochemistry",
+            "Botany",
+            "Chemistry",
+            "Computer Science",
+            "Geology",
+            "Mathematics",
+            "Physics",
+            "Zoology"
+          ]
+        },
+        {
+          "name": "Faculty of Arts",
+          "departments": [
+            "Communication and Development Studies",
+            "English",
+            "Geography and Planning",
+            "History and Archaeology",
+            "Linguistics",
+            "Performing and Visual Arts"
+          ]
+        },
+        {
+          "name": "Faculty of Education",
+          "departments": [
+            "Counseling Psychology",
+            "Educational Foundations",
+            "Educational Leadership",
+            "Physical Education"
+          ]
+        },
+        {
+          "name": "College of Technology",
+          "departments": [
+            "Agribusiness Technology",
+            "Agricultural and Environmental Engineering",
+            "Animal Production Technology",
+            "Crop Production Technology",
+            "Electric Power Engineering",
+            "Electronics",
+            "Food Science and Technology"
+          ]
+        },
+        {
+          "name": "Higher Institute of Commerce and Management",
+          "departments": [
+            "Accounting",
+            "Insurance and Security",
+            "Management",
+            "Marketing"
+          ]
+        },
+        {
+            "name": "National Higher Polytechnic Institute",
+            "departments": [
+                "Civil Engineering",
+                "Computer Engineering",
+                "Electrical and Electronic Engineering",
+                "Mechanical Engineering",
+                "Mining and Mineral Engineering",
+                "Petroleum Engineering"
+            ]
+        }
+      ]
+    },
+    {
+      "id": "ub",
+      "name": "University of Buea",
+      "short": "UB",
+      "logo": "ub_logo.png",
+      "faculties": [
+        {
+          "name": "Faculty of Science",
+          "departments": [
+            "Biochemistry",
+            "Botany",
+            "Chemistry",
+            "Computer Science",
+            "Environmental Science",
+            "Geology",
+            "Mathematics",
+            "Microbiology",
+            "Physics",
+            "Zoology"
+          ]
+        },
+        {
+          "name": "Faculty of Engineering and Technology",
+          "departments": [
+            "Computer Engineering",
+            "Electrical and Electronic Engineering",
+            "Telecommunications Engineering"
+          ]
+        },
+        {
+            "name": "Faculty of Social and Management Sciences",
+            "departments": [
+                "Accounting",
+                "Banking and Finance",
+                "Economics",
+                "Journalism and Mass Communication",
+                "Management",
+                "Political Science",
+                "Sociology and Anthropology",
+                "Women and Gender Studies"
+            ]
+        }
+      ]
+    }
+  ]
+}
