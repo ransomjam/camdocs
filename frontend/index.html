@@ -1666,6 +1666,31 @@
                 }
             };
 
+            const [selectedUserDocs, setSelectedUserDocs] = useState(null);
+            const [loadingDocs, setLoadingDocs] = useState(false);
+
+            const handleViewDocs = async (userId, username) => {
+                setLoadingDocs(true);
+                try {
+                    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/documents`);
+                    if (res.ok) {
+                        const docs = await res.json();
+                        setSelectedUserDocs({ username, docs });
+                    } else {
+                        alert('Failed to fetch documents');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Network error');
+                } finally {
+                    setLoadingDocs(false);
+                }
+            };
+
+            const handleDownloadDoc = (filename) => {
+                window.open(`${API_BASE}/api/download/${filename}`, '_blank');
+            };
+
             if (checkingAuth) {
                 return (
                     <div className="min-h-screen flex items-center justify-center bg-midnight text-teal">
@@ -1709,7 +1734,13 @@
                                                 <td className="p-4 text-sm text-slate-300">{user.institution || '-'}</td>
                                                 <td className="p-4 text-sm text-slate-300">{user.contact || '-'}</td>
                                                 <td className="p-4 text-sm text-teal">{user.documents_generated || 0}</td>
-                                                <td className="p-4">
+                                                <td className="p-4 flex gap-2">
+                                                    <button 
+                                                        onClick={() => handleViewDocs(user.id, user.username)}
+                                                        className="text-teal hover:text-white text-sm bg-teal/10 px-3 py-1 rounded hover:bg-teal/20 transition-colors"
+                                                    >
+                                                        View Docs
+                                                    </button>
                                                     {user.username !== 'admin' && (
                                                         <button 
                                                             onClick={() => handleDeleteUser(user.id)}
@@ -1725,6 +1756,50 @@
                                 </table>
                             </div>
                         </div>
+
+                        {/* Documents Modal */}
+                        {selectedUserDocs && (
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                <div className="glass-panel rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                                    <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                                        <h3 className="text-xl font-bold text-white">
+                                            Documents: <span className="text-teal">{selectedUserDocs.username}</span>
+                                        </h3>
+                                        <button onClick={() => setSelectedUserDocs(null)} className="text-slate-400 hover:text-white">
+                                            <Icons.X />
+                                        </button>
+                                    </div>
+                                    <div className="p-6 overflow-y-auto flex-1">
+                                        {selectedUserDocs.docs.length === 0 ? (
+                                            <p className="text-slate-400 text-center py-8">No documents found for this user.</p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {selectedUserDocs.docs.map(doc => (
+                                                    <div key={doc.id} className="bg-white/5 rounded-lg p-4 flex items-center justify-between hover:bg-white/10 transition-colors">
+                                                        <div className="flex items-center gap-3 overflow-hidden">
+                                                            <div className="bg-ocean/20 p-2 rounded-lg text-ocean-light">
+                                                                <Icons.FileText size={20} />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-medium text-white truncate">{doc.original_filename || doc.filename}</p>
+                                                                <p className="text-xs text-slate-400">{new Date(doc.created_at).toLocaleString()}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => handleDownloadDoc(doc.filename)}
+                                                            className="flex items-center gap-2 text-xs font-bold text-teal hover:text-white bg-teal/10 hover:bg-teal/20 px-3 py-2 rounded-lg transition-colors"
+                                                        >
+                                                            <Icons.Download size={14} />
+                                                            Download
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             }

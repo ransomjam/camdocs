@@ -50,6 +50,16 @@ class User(UserMixin, db.Model):
     institution = db.Column(db.String(200), nullable=True)
     contact = db.Column(db.String(100), nullable=True)
     documents_generated = db.Column(db.Integer, default=0)
+    documents = db.relationship('DocumentRecord', backref='user', lazy=True, cascade="all, delete-orphan")
+
+class DocumentRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=True)
+    job_id = db.Column(db.String(100), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    file_path = db.Column(db.String(500), nullable=True) # Relative path to storage
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -140,6 +150,21 @@ def delete_user(user_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({'message': 'User deleted successfully'}), 200
+
+@app.route('/api/admin/users/<int:user_id>/documents', methods=['GET'])
+@login_required
+def list_user_documents(user_id):
+    if current_user.username != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    docs = DocumentRecord.query.filter_by(user_id=user_id).order_by(DocumentRecord.created_at.desc()).all()
+    return jsonify([{
+        'id': d.id,
+        'filename': d.filename,
+        'original_filename': d.original_filename,
+        'created_at': d.created_at.isoformat(),
+        'job_id': d.job_id
+    } for d in docs]), 200
 
 @app.route('/api/auth/status', methods=['GET'])
 def auth_status():
@@ -11116,8 +11141,25 @@ def upload_document():
         }
         with open(os.path.join(OUTPUT_FOLDER, f"{job_id}_meta.json"), 'w') as f:
             json.dump(metadata, f)
+            
+        # Create DocumentRecord
+        if current_user.is_authenticated:
+            # We don't know the final filename yet, but we can update it later or guess it
+            # The processor usually saves as formatted_{original_filename}.docx or similar
+            # But let's just save the job_id and original filename for now
+            # We'll update the filename after processing if possible, or just use job_id logic
+            doc_record = DocumentRecord(
+                user_id=current_user.id,
+                filename=f"formatted_{file.filename}", # Predicted filename
+                original_filename=file.filename,
+                job_id=job_id,
+                file_path=f"{job_id}_formatted.docx" # Internal storage name usually
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+            
     except Exception as e:
-        logger.error(f"Failed to save metadata: {e}")
+        logger.error(f"Failed to save metadata or record: {e}")
     
     try:
         # Process document
@@ -11654,6 +11696,28 @@ def api_generate_coverpage():
             
     # Return the file
     filename = os.path.basename(output_path)
+    
+    # Update DocumentRecord if exists
+    if current_user.is_authenticated:
+        try:
+            # Find the record for this job
+            # We might need to pass job_id to this function or infer it
+            # For now, let's assume we can find the most recent record for this user with this filename pattern
+            # Or better, update the record created during upload if we had the job_id
+            # But here we are in coverpage_generator logic which is separate.
+            # Let's just create a NEW record for the cover page version
+            doc_record = DocumentRecord(
+                user_id=current_user.id,
+                filename=filename,
+                original_filename=f"Cover Page for {filename}",
+                job_id=mergeJobId if 'mergeJobId' in locals() else None, # We don't have mergeJobId here easily
+                file_path=filename # Relative to Cover Pages folder
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+        except Exception as e:
+            logger.error(f"Failed to save cover page record: {e}")
+
     return jsonify({
         'success': True,
         'filename': filename,
