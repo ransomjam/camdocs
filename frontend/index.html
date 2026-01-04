@@ -1350,8 +1350,16 @@
                 // Show share option
                 setShowShare(true);
 
-                // Open in new tab with inline disposition
-                window.open(`${API_BASE}/download/${result.job_id}?inline=true`, '_blank');
+                // Trigger download
+                const downloadUrl = `${API_BASE}/download/${result.job_id}?inline=false`;
+                
+                // Create a temporary link to force download
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = ''; // Browser will use Content-Disposition filename
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             };
 
             // Share handler

@@ -26,7 +26,6 @@ Thumbs.db
 # Application Data (Don't commit generated files)
 outputs/
 uploads/
-Cover Pages/
 backend/outputs/
 backend/uploads/
 backend/Cover Pages/

@@ -10879,6 +10879,17 @@ def upload_document():
     input_path = os.path.join(UPLOAD_FOLDER, f"{job_id}{file_ext}")
     file.save(input_path)
     
+    # Save metadata
+    try:
+        metadata = {
+            'original_filename': file.filename,
+            'upload_time': datetime.now().isoformat()
+        }
+        with open(os.path.join(OUTPUT_FOLDER, f"{job_id}_meta.json"), 'w') as f:
+            json.dump(metadata, f)
+    except Exception as e:
+        logger.error(f"Failed to save metadata: {e}")
+    
     try:
         # Process document
         processor = DocumentProcessor()
@@ -10963,13 +10974,27 @@ def download_document(job_id):
     if not os.path.exists(output_path):
         return jsonify({'error': 'Document not found'}), 404
     
+    # Try to get original filename from metadata
+    download_name = 'formatted_document.docx'
+    meta_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_meta.json")
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path, 'r') as f:
+                metadata = json.load(f)
+                original_name = metadata.get('original_filename', '')
+                if original_name:
+                    name, ext = os.path.splitext(original_name)
+                    download_name = f"{name}_formatted.docx"
+        except Exception as e:
+            logger.error(f"Error reading metadata for job {job_id}: {e}")
+    
     inline = request.args.get('inline', 'false').lower() == 'true'
     as_attachment = not inline
     
     return send_file(
         output_path,
         as_attachment=as_attachment,
-        download_name='formatted_document.docx',
+        download_name=download_name,
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
 
