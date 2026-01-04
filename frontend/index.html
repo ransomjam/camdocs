@@ -937,7 +937,7 @@
                                         </span>
                                     </div>
                                     
-                                    <div className="grid grid-cols-1 gap-3">
+                                    <div className="grid grid-cols-2 gap-3">
                                         <button 
                                             onClick={() => {
                                                 const downloadUrl = `${API_BASE}${generatedFile.downloadUrl}?inline=false`;
@@ -951,7 +951,23 @@
                                             className="flex items-center justify-center gap-2 bg-teal hover:bg-teal-light text-white px-3 py-2 rounded-lg text-sm md:text-base font-bold shadow-lg shadow-teal/20 transition-all hover:-translate-y-0.5 text-center w-full"
                                         >
                                             <span className="scale-75 md:scale-100"><Icons.Download /></span>
-                                            Download
+                                            Download DOCX
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                const pdfUrl = generatedFile.downloadUrl.replace('/download/', '/download-pdf/');
+                                                const downloadUrl = `${API_BASE}${pdfUrl}?inline=false`;
+                                                const link = document.createElement('a');
+                                                link.href = downloadUrl;
+                                                link.download = ''; 
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                            }}
+                                            className="flex items-center justify-center gap-2 bg-teal hover:bg-teal-light text-white px-3 py-2 rounded-lg text-sm md:text-base font-bold shadow-lg shadow-teal/20 transition-all hover:-translate-y-0.5 text-center w-full"
+                                        >
+                                            <span className="scale-75 md:scale-100"><Icons.Download /></span>
+                                            Download PDF
                                         </button>
                                     </div>
                                 </div>
@@ -1290,19 +1306,47 @@
             };
 
             // Download handler
-            const handleDownload = async () => {
+            const handleDownload = async (format = 'docx') => {
                 if (!result || !result.job_id) return;
 
                 // Trigger download
-                const downloadUrl = `${API_BASE}/download/${result.job_id}?inline=false`;
+                const endpoint = format === 'pdf' ? 'download-pdf' : 'download';
+                const downloadUrl = `${API_BASE}/${endpoint}/${result.job_id}?inline=false`;
                 
-                // Create a temporary link to force download
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-                link.download = ''; // Browser will use Content-Disposition filename
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                // For PDF, we want to check if it exists first to avoid downloading error JSON
+                if (format === 'pdf') {
+                    setStatus('Converting to PDF...');
+                    try {
+                        const response = await fetch(downloadUrl);
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || 'PDF conversion failed');
+                        }
+                        
+                        // If successful, trigger download
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = ''; // Browser will use Content-Disposition filename
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                        alert(`PDF Error: ${err.message}`);
+                    } finally {
+                        setStatus('');
+                    }
+                } else {
+                    // For DOCX, standard download
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = ''; // Browser will use Content-Disposition filename
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
             };
 
             // Share handler
@@ -1566,14 +1610,23 @@
 
                                     {/* Action buttons */}
                                     {result && (
-                                        <div className="grid grid-cols-2 gap-3 md:gap-4 mt-6">
-                                            <button
-                                                onClick={handleDownload}
-                                                className="flex items-center justify-center gap-1 md:gap-2 px-2 py-2 md:px-6 md:py-3 bg-gradient-to-r from-ocean to-teal text-white rounded-lg hover:from-ocean-dark hover:to-ocean transition-all duration-300 shadow-lg hover:shadow-ocean/50 hover:-translate-y-0.5 font-semibold text-xs md:text-base w-full whitespace-nowrap"
-                                            >
-                                                <span className="scale-75 md:scale-100"><Icons.Download /></span>
-                                                Download
-                                            </button>
+                                        <div className="flex flex-col gap-3 mt-6">
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <button
+                                                    onClick={() => handleDownload('docx')}
+                                                    className="flex items-center justify-center gap-1 md:gap-2 px-2 py-2 md:px-6 md:py-3 bg-gradient-to-r from-ocean to-teal text-white rounded-lg hover:from-ocean-dark hover:to-ocean transition-all duration-300 shadow-lg hover:shadow-ocean/50 hover:-translate-y-0.5 font-semibold text-xs md:text-base w-full whitespace-nowrap"
+                                                >
+                                                    <span className="scale-75 md:scale-100"><Icons.Download /></span>
+                                                    Download DOCX
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDownload('pdf')}
+                                                    className="flex items-center justify-center gap-1 md:gap-2 px-2 py-2 md:px-6 md:py-3 bg-gradient-to-r from-ocean to-teal text-white rounded-lg hover:from-ocean-dark hover:to-ocean transition-all duration-300 shadow-lg hover:shadow-ocean/50 hover:-translate-y-0.5 font-semibold text-xs md:text-base w-full whitespace-nowrap"
+                                                >
+                                                    <span className="scale-75 md:scale-100"><Icons.Download /></span>
+                                                    Download PDF
+                                                </button>
+                                            </div>
                                             <button
                                                 onClick={() => {
                                                     const currentJobId = result.job_id;

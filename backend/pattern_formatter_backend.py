@@ -11000,6 +11000,69 @@ def download_document(job_id):
     )
 
 
+@app.route('/download-pdf/<job_id>', methods=['GET'])
+def download_pdf(job_id):
+    """Convert and download document as PDF"""
+    docx_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_formatted.docx")
+    pdf_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_formatted.pdf")
+    
+    if not os.path.exists(docx_path):
+        return jsonify({'error': 'Document not found'}), 404
+        
+    # Determine filename
+    download_name = 'formatted_document.pdf'
+    meta_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_meta.json")
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path, 'r') as f:
+                metadata = json.load(f)
+                original_name = metadata.get('original_filename', '')
+                if original_name:
+                    name, ext = os.path.splitext(original_name)
+                    download_name = f"{name}_formatted.pdf"
+        except:
+            pass
+
+    # Check if PDF already exists
+    if os.path.exists(pdf_path):
+        return send_file(pdf_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
+
+    # Convert to PDF
+    try:
+        import sys
+        import subprocess
+        
+        if sys.platform == 'win32':
+            # Windows: Use docx2pdf (requires Word installed)
+            try:
+                from docx2pdf import convert
+                convert(docx_path, pdf_path)
+            except ImportError:
+                return jsonify({'error': 'docx2pdf not installed'}), 500
+            except Exception as e:
+                return jsonify({'error': f'Windows PDF conversion failed (Word installed?): {str(e)}'}), 500
+        else:
+            # Linux: Use LibreOffice (headless)
+            # libreoffice --headless --convert-to pdf --outdir <dir> <file>
+            # Check if libreoffice is installed
+            try:
+                subprocess.run(['libreoffice', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                return jsonify({'error': 'LibreOffice not found on server. PDF conversion unavailable.'}), 501
+
+            cmd = ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', OUTPUT_FOLDER, docx_path]
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+        if os.path.exists(pdf_path):
+            return send_file(pdf_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
+        else:
+            return jsonify({'error': 'PDF conversion failed to produce output file.'}), 500
+            
+    except Exception as e:
+        logger.error(f"PDF conversion error: {e}")
+        return jsonify({'error': f'PDF conversion failed: {str(e)}'}), 500
+
+
 def generate_preview_markdown(structured):
     """Generate markdown preview from structured data"""
     markdown = ''
