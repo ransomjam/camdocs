@@ -4,6 +4,9 @@
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor, Emu
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -29,11 +32,78 @@ logger = logging.getLogger(__name__)
 
 # Serve frontend files directly from the backend for simple deployment
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
+app.config['SECRET_KEY'] = 'your-secret-key-change-this-in-production'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 CORS(app)
+db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# User Model
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Create DB
+with app.app_context():
+    db.create_all()
 
 @app.route('/')
 def serve_frontend():
     return app.send_static_file('index.html')
+
+# Auth Routes
+@app.route('/api/auth/signup', methods=['POST'])
+def signup():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'error': 'Username and password required'}), 400
+        
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already exists'}), 400
+        
+    new_user = User(username=username, password_hash=generate_password_hash(password))
+    db.session.add(new_user)
+    db.session.commit()
+    
+    return jsonify({'message': 'User created successfully'}), 201
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if user and check_password_hash(user.password_hash, password):
+        login_user(user)
+        return jsonify({'message': 'Logged in successfully', 'username': user.username}), 200
+        
+    return jsonify({'error': 'Invalid username or password'}), 401
+
+@app.route('/api/auth/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'message': 'Logged out successfully'}), 200
+
+@app.route('/api/auth/status', methods=['GET'])
+def auth_status():
+    if current_user.is_authenticated:
+        return jsonify({'isAuthenticated': True, 'username': current_user.username}), 200
+    return jsonify({'isAuthenticated': False}), 200
 
 # Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -10865,6 +10935,7 @@ def health_check():
 
 
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload_document():
     """Upload and process document"""
     if 'file' not in request.files:
@@ -11189,6 +11260,7 @@ def search_courses():
     return jsonify(matches[:10]) # Limit to 10 results
 
 @app.route('/api/coverpage/generate', methods=['POST'])
+@login_required
 def api_generate_coverpage():
     """Generate cover page from form data"""
     data = request.json

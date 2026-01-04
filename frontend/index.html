@@ -402,6 +402,123 @@
             ? 'http://localhost:5000' 
             : '';
 
+        // Auth Component
+        const AuthPage = ({ onLogin }) => {
+            const [isLogin, setIsLogin] = React.useState(true);
+            const [username, setUsername] = React.useState('');
+            const [password, setPassword] = React.useState('');
+            const [error, setError] = React.useState('');
+            const [loading, setLoading] = React.useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                setLoading(true);
+
+                const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
+                
+                try {
+                    const response = await fetch(`${API_BASE}${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        if (isLogin) {
+                            onLogin(data.username);
+                        } else {
+                            // Auto login after signup or switch to login
+                            setIsLogin(true);
+                            setError('Account created! Please log in.');
+                        }
+                    } else {
+                        setError(data.error || 'Authentication failed');
+                    }
+                } catch (err) {
+                    setError('Network error. Please try again.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="glass-panel rounded-xl p-8 w-full max-w-md">
+                        <div className="text-center mb-8">
+                            <div className="flex justify-center mb-4">
+                                <div className="bg-teal/20 p-3 rounded-xl">
+                                    <span className="text-teal scale-150"><Icons.FileText size={32} /></span>
+                                </div>
+                            </div>
+                            <h2 className="text-2xl font-bold text-white mb-2">
+                                {isLogin ? 'Welcome Back' : 'Create Account'}
+                            </h2>
+                            <p className="text-slate-400">
+                                {isLogin ? 'Sign in to continue to CamDocs' : 'Join CamDocs to format your documents'}
+                            </p>
+                        </div>
+
+                        {error && (
+                            <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 rounded-lg mb-6 text-sm text-center">
+                                {error}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">Username</label>
+                                <input 
+                                    type="text" 
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    className="w-full glass-input rounded-lg p-2.5 text-white placeholder-white/30 focus:border-teal outline-none"
+                                    placeholder="Enter username"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+                                <input 
+                                    type="password" 
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full glass-input rounded-lg p-2.5 text-white placeholder-white/30 focus:border-teal outline-none"
+                                    placeholder="Enter password"
+                                    required
+                                />
+                            </div>
+                            
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="w-full bg-teal hover:bg-teal-light text-white font-bold py-2.5 rounded-lg transition-all shadow-lg shadow-teal/20 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                            >
+                                {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+                            </button>
+                        </form>
+
+                        <div className="mt-6 text-center">
+                            <button 
+                                onClick={() => { setIsLogin(!isLogin); setError(''); }}
+                                className="text-teal hover:text-teal-light text-sm font-medium transition-colors"
+                            >
+                                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                            </button>
+                        </div>
+                        
+                        <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                            <p className="text-xs text-slate-500">
+                                Note: On the free demo server, accounts may be reset periodically.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // Fallback Data
         const FALLBACK_INSTITUTIONS = [
             {
@@ -1404,6 +1521,53 @@
                 }
             };
 
+            // Auth State
+            const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+            const [currentUser, setCurrentUser] = React.useState(null);
+            const [checkingAuth, setCheckingAuth] = React.useState(true);
+
+            React.useEffect(() => {
+                // Check auth status on load
+                fetch(`${API_BASE}/api/auth/status`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.isAuthenticated) {
+                            setIsAuthenticated(true);
+                            setCurrentUser(data.username);
+                        }
+                    })
+                    .catch(err => console.error("Auth check failed", err))
+                    .finally(() => setCheckingAuth(false));
+            }, []);
+
+            const handleLogin = (username) => {
+                setIsAuthenticated(true);
+                setCurrentUser(username);
+            };
+
+            const handleLogout = async () => {
+                try {
+                    await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST' });
+                    setIsAuthenticated(false);
+                    setCurrentUser(null);
+                    handleReset(); // Reset app state
+                } catch (err) {
+                    console.error("Logout failed", err);
+                }
+            };
+
+            if (checkingAuth) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-midnight text-teal">
+                        <div className="animate-spin"><Icons.Loader size={40} /></div>
+                    </div>
+                );
+            }
+
+            if (!isAuthenticated) {
+                return <AuthPage onLogin={handleLogin} />;
+            }
+
             // Stats data for display
             const statsData = result ? [
                 { label: 'Headings', value: result.stats?.headings || 0, icon: Icons.Heading, color: 'text-teal' },
@@ -1418,6 +1582,17 @@
                     <div className="max-w-5xl mx-auto w-full flex-1 flex flex-col">
                         {/* Header - Compact & Modern */}
                         <div className="text-center mb-6 pt-2 relative">
+                            <div className="absolute right-0 top-0">
+                                <button 
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-2 text-xs md:text-sm text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg"
+                                >
+                                    <Icons.User size={14} />
+                                    <span className="hidden md:inline">{currentUser}</span>
+                                    <span className="md:hidden">Logout</span>
+                                    <span className="hidden md:inline opacity-50">| Logout</span>
+                                </button>
+                            </div>
                             <div className="flex flex-row items-center justify-center gap-3 mb-6">
                                 <div className="h-10 w-10 md:h-12 md:w-12 bg-gradient-to-r from-ocean to-teal rounded-lg flex items-center justify-center shadow-lg shadow-ocean/30 p-1">
                                     <img src="logo/logo.png" alt="CamDocs Logo" className="h-full w-full object-contain" />
