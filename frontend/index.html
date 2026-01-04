@@ -938,15 +938,21 @@
                                     </div>
                                     
                                     <div className="grid grid-cols-1 gap-3">
-                                        <a 
-                                            href={`${API_BASE}${generatedFile.downloadUrl}?inline=false`} 
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center justify-center gap-2 bg-teal hover:bg-teal-light text-white px-3 py-2 rounded-lg text-sm md:text-base font-bold shadow-lg shadow-teal/20 transition-all hover:-translate-y-0.5 text-center"
+                                        <button 
+                                            onClick={() => {
+                                                const downloadUrl = `${API_BASE}${generatedFile.downloadUrl}?inline=false`;
+                                                const link = document.createElement('a');
+                                                link.href = downloadUrl;
+                                                link.download = ''; 
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                            }}
+                                            className="flex items-center justify-center gap-2 bg-teal hover:bg-teal-light text-white px-3 py-2 rounded-lg text-sm md:text-base font-bold shadow-lg shadow-teal/20 transition-all hover:-translate-y-0.5 text-center w-full"
                                         >
                                             <span className="scale-75 md:scale-100"><Icons.Download /></span>
                                             Download
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                             )}
