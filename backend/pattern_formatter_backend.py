@@ -11035,6 +11035,8 @@ def download_pdf(job_id):
         if sys.platform == 'win32':
             # Windows: Use docx2pdf (requires Word installed)
             try:
+                import pythoncom
+                pythoncom.CoInitialize()
                 from docx2pdf import convert
                 convert(docx_path, pdf_path)
             except ImportError:
