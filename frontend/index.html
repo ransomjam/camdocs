@@ -555,23 +555,6 @@
             const [loading, setLoading] = useState(false);
             const [generatedFile, setGeneratedFile] = useState(null);
             const [previewMode, setPreviewMode] = useState(false);
-            const [showShare, setShowShare] = useState(false);
-            const [shareBlob, setShareBlob] = useState(null);
-
-            // Pre-fetch blob for sharing to prevent timeout
-            React.useEffect(() => {
-                if (generatedFile && generatedFile.downloadUrl) {
-                    fetch(`${API_BASE}${generatedFile.downloadUrl}`)
-                        .then(res => {
-                            if (res.ok) return res.blob();
-                            throw new Error('Fetch failed');
-                        })
-                        .then(blob => setShareBlob(blob))
-                        .catch(err => console.error("Pre-fetch failed", err));
-                } else {
-                    setShareBlob(null);
-                }
-            }, [generatedFile]);
 
             // Load institutions on mount
             React.useEffect(() => {
@@ -687,7 +670,6 @@
 
             const handleSubmit = async () => {
                 setLoading(true);
-                setShowShare(false);
                 try {
                     // Save profile
                     localStorage.setItem('coverpage_profile', JSON.stringify({
@@ -716,37 +698,6 @@
                     alert('Failed to generate cover page');
                 } finally {
                     setLoading(false);
-                }
-            };
-
-            // Share Handler
-            const handleShare = async () => {
-                if (!generatedFile) return;
-                
-                try {
-                    let blob = shareBlob;
-                    if (!blob) {
-                        const response = await fetch(`${API_BASE}${generatedFile.downloadUrl}`);
-                        if (!response.ok) throw new Error('File download failed');
-                        blob = await response.blob();
-                    }
-
-                    const fileToShare = new File([blob], generatedFile.filename, { type: blob.type });
-                    
-                    if (navigator.share && navigator.canShare({ files: [fileToShare] })) {
-                        await navigator.share({
-                            files: [fileToShare],
-                            title: 'Cover Page Document',
-                            text: 'Here is your document with cover page from CamDocs.'
-                        });
-                    } else {
-                        alert('Sharing is not supported on this device. The file is available for download.');
-                    }
-                } catch (err) {
-                    console.error("Share failed", err);
-                    if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
-                        alert('Failed to share: ' + err.message);
-                    }
                 }
             };
 
@@ -986,27 +937,16 @@
                                         </span>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 gap-3">
                                         <a 
-                                            href={`${API_BASE}${generatedFile.downloadUrl}?inline=true`} 
+                                            href={`${API_BASE}${generatedFile.downloadUrl}?inline=false`} 
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            onClick={() => setShowShare(true)}
                                             className="flex items-center justify-center gap-2 bg-teal hover:bg-teal-light text-white px-3 py-2 rounded-lg text-sm md:text-base font-bold shadow-lg shadow-teal/20 transition-all hover:-translate-y-0.5 text-center"
                                         >
                                             <span className="scale-75 md:scale-100"><Icons.Download /></span>
-                                            Open
+                                            Download
                                         </a>
-                                        
-                                        {showShare && (
-                                            <button 
-                                                onClick={handleShare}
-                                                className="flex items-center justify-center gap-2 bg-ocean hover:bg-ocean-dark text-white px-3 py-2 rounded-lg text-sm md:text-base font-bold shadow-lg shadow-ocean/20 transition-all hover:-translate-y-0.5"
-                                            >
-                                                <span className="scale-75 md:scale-100"><Icons.Share /></span>
-                                                Share
-                                            </button>
-                                        )}
                                     </div>
                                 </div>
                             )}
