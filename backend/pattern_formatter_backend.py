@@ -47,6 +47,9 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
+    institution = db.Column(db.String(200), nullable=True)
+    contact = db.Column(db.String(100), nullable=True)
+    documents_generated = db.Column(db.Integer, default=0)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -66,6 +69,8 @@ def signup():
     data = request.json
     username = data.get('username')
     password = data.get('password')
+    institution = data.get('institution')
+    contact = data.get('contact')
     
     if not username or not password:
         return jsonify({'error': 'Username and password required'}), 400
@@ -73,7 +78,12 @@ def signup():
     if User.query.filter_by(username=username).first():
         return jsonify({'error': 'Username already exists'}), 400
         
-    new_user = User(username=username, password_hash=generate_password_hash(password))
+    new_user = User(
+        username=username, 
+        password_hash=generate_password_hash(password),
+        institution=institution,
+        contact=contact
+    )
     db.session.add(new_user)
     db.session.commit()
     
@@ -108,8 +118,28 @@ def list_users():
     users = User.query.all()
     return jsonify([{
         'id': u.id,
-        'username': u.username
+        'username': u.username,
+        'institution': u.institution,
+        'contact': u.contact,
+        'documents_generated': u.documents_generated
     } for u in users]), 200
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user(user_id):
+    if current_user.username != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+        
+    if user.username == 'admin':
+        return jsonify({'error': 'Cannot delete admin user'}), 400
+        
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'message': 'User deleted successfully'}), 200
 
 @app.route('/api/auth/status', methods=['GET'])
 def auth_status():
@@ -11058,6 +11088,11 @@ def health_check():
 @login_required
 def upload_document():
     """Upload and process document"""
+    # Increment document count for current user
+    if current_user.is_authenticated:
+        current_user.documents_generated += 1
+        db.session.commit()
+
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
     

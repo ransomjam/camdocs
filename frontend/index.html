@@ -432,6 +432,9 @@
             const [isLogin, setIsLogin] = React.useState(true);
             const [username, setUsername] = React.useState('');
             const [password, setPassword] = React.useState('');
+            const [institution, setInstitution] = React.useState('The University of Bamenda');
+            const [customInstitution, setCustomInstitution] = React.useState('');
+            const [contact, setContact] = React.useState('');
             const [error, setError] = React.useState('');
             const [loading, setLoading] = React.useState(false);
 
@@ -441,12 +444,19 @@
                 setLoading(true);
 
                 const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
+                const finalInstitution = institution === 'Other (Specify)' ? customInstitution : institution;
+                
+                const payload = { username, password };
+                if (!isLogin) {
+                    payload.institution = finalInstitution;
+                    payload.contact = contact;
+                }
                 
                 try {
                     const response = await fetch(`${API_BASE}${endpoint}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, password })
+                        body: JSON.stringify(payload)
                     });
                     
                     const data = await response.json();
@@ -515,6 +525,46 @@
                                     required
                                 />
                             </div>
+
+                            {!isLogin && (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">Institution</label>
+                                        <select 
+                                            value={institution}
+                                            onChange={(e) => setInstitution(e.target.value)}
+                                            className="w-full glass-input rounded-lg p-2.5 text-white placeholder-white/30 focus:border-teal outline-none bg-midnight"
+                                        >
+                                            <option value="The University of Bamenda">The University of Bamenda</option>
+                                            <option value="The University of Buea">The University of Buea</option>
+                                            <option value="Other (Specify)">Other (Specify)</option>
+                                        </select>
+                                    </div>
+                                    {institution === 'Other (Specify)' && (
+                                        <div>
+                                            <input 
+                                                type="text" 
+                                                value={customInstitution}
+                                                onChange={(e) => setCustomInstitution(e.target.value)}
+                                                className="w-full glass-input rounded-lg p-2.5 text-white placeholder-white/30 focus:border-teal outline-none mt-2"
+                                                placeholder="Specify Institution"
+                                                required
+                                            />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">Contact</label>
+                                        <input 
+                                            type="text" 
+                                            value={contact}
+                                            onChange={(e) => setContact(e.target.value)}
+                                            className="w-full glass-input rounded-lg p-2.5 text-white placeholder-white/30 focus:border-teal outline-none"
+                                            placeholder="Phone or Email"
+                                            required
+                                        />
+                                    </div>
+                                </>
+                            )}
                             
                             <button 
                                 type="submit" 
@@ -1318,6 +1368,7 @@
             const [showSuccessMessage, setShowSuccessMessage] = useState(false);
             const [elapsedTime, setElapsedTime] = useState(0);
             const [showShare, setShowShare] = useState(false);
+            const [showProfile, setShowProfile] = useState(false);
             const fileInputRef = useRef(null);
             const [shareBlob, setShareBlob] = useState(null);
 
@@ -1599,6 +1650,22 @@
                 }
             };
 
+            const handleDeleteUser = async (userId) => {
+                if (!confirm('Are you sure you want to delete this user?')) return;
+                try {
+                    const res = await fetch(`${API_BASE}/api/admin/users/${userId}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        fetchUsers(); // Refresh list
+                    } else {
+                        const data = await res.json();
+                        alert(data.error || 'Failed to delete user');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Network error');
+                }
+            };
+
             if (checkingAuth) {
                 return (
                     <div className="min-h-screen flex items-center justify-center bg-midnight text-teal">
@@ -1615,7 +1682,7 @@
             if (showAdmin) {
                 return (
                     <div className="min-h-screen bg-midnight p-6 text-white">
-                        <div className="max-w-4xl mx-auto">
+                        <div className="max-w-6xl mx-auto">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-bold text-teal">User Management</h2>
                                 <button onClick={() => setShowAdmin(false)} className="text-slate-400 hover:text-white">
@@ -1628,6 +1695,10 @@
                                         <tr>
                                             <th className="p-4">ID</th>
                                             <th className="p-4">Username</th>
+                                            <th className="p-4">Institution</th>
+                                            <th className="p-4">Contact</th>
+                                            <th className="p-4">Docs</th>
+                                            <th className="p-4">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
@@ -1635,6 +1706,19 @@
                                             <tr key={user.id} className="hover:bg-white/5">
                                                 <td className="p-4 text-slate-400">#{user.id}</td>
                                                 <td className="p-4 font-medium">{user.username}</td>
+                                                <td className="p-4 text-sm text-slate-300">{user.institution || '-'}</td>
+                                                <td className="p-4 text-sm text-slate-300">{user.contact || '-'}</td>
+                                                <td className="p-4 text-sm text-teal">{user.documents_generated || 0}</td>
+                                                <td className="p-4">
+                                                    {user.username !== 'admin' && (
+                                                        <button 
+                                                            onClick={() => handleDeleteUser(user.id)}
+                                                            className="text-red-400 hover:text-red-300 text-sm bg-red-500/10 px-3 py-1 rounded hover:bg-red-500/20 transition-colors"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    )}
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -1658,8 +1742,24 @@
                 <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-ocean-dark via-[#0F385C] to-midnight p-4 md:p-6 text-white flex flex-col">
                     <div className="max-w-5xl mx-auto w-full flex-1 flex flex-col">
                         {/* Header - Compact & Modern */}
-                        <div className="text-center mb-6 pt-2 relative">
-                            <div className="absolute right-0 top-0 flex gap-2">
+                        <div className="flex items-center justify-between mb-6 pt-2 relative">
+                            {/* Left: Logo & Title */}
+                            <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 md:h-10 md:w-10 bg-gradient-to-r from-ocean to-teal rounded-lg flex items-center justify-center shadow-lg shadow-ocean/30 p-1">
+                                    <img src="logo/logo.png" alt="CamDocs Logo" className="h-full w-full object-contain" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <h1 className="text-xl md:text-3xl font-bold text-white tracking-tight font-display">
+                                        CamDocs
+                                    </h1>
+                                    <p className="text-white/60 text-xs font-medium tracking-wide hidden md:block">
+                                        Automatic Document Formatting
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Right: Actions */}
+                            <div className="flex items-center gap-3">
                                 {currentUser === 'admin' && (
                                     <button 
                                         onClick={fetchUsers}
@@ -1669,36 +1769,42 @@
                                         <span className="hidden md:inline">Manage Users</span>
                                     </button>
                                 )}
-                                <button 
-                                    onClick={handleLogout}
-                                    className="flex items-center gap-2 text-xs md:text-sm text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg"
-                                >
-                                    <Icons.User size={14} />
-                                    <span className="hidden md:inline">{currentUser}</span>
-                                    <span className="md:hidden">Logout</span>
-                                    <span className="hidden md:inline opacity-50">| Logout</span>
-                                </button>
-                            </div>
-                            <div className="flex flex-row items-center justify-center gap-3 mb-6">
-                                <div className="h-10 w-10 md:h-12 md:w-12 bg-gradient-to-r from-ocean to-teal rounded-lg flex items-center justify-center shadow-lg shadow-ocean/30 p-1">
-                                    <img src="logo/logo.png" alt="CamDocs Logo" className="h-full w-full object-contain" />
-                                </div>
-                                <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight font-display">
-                                    CamDocs
-                                </h1>
-                            </div>
-                            <div className="flex flex-col items-center gap-1">
-                                <p className="text-white/90 text-base md:text-xl font-semibold tracking-wide">
-                                    Automatic Document Formatting
-                                </p>
-                                <div className="flex flex-wrap justify-center gap-2 text-xs md:text-sm text-teal font-bold uppercase tracking-wider opacity-80">
-                                    <span>Projects</span>
-                                    <span className="text-white/20">•</span>
-                                    <span>Thesis</span>
-                                    <span className="text-white/20">•</span>
-                                    <span>Reports</span>
-                                    <span className="text-white/20">•</span>
-                                    <span>Assignments</span>
+                                
+                                <div className="relative">
+                                    <button 
+                                        onClick={() => setShowProfile(!showProfile)}
+                                        className="flex items-center gap-2 text-xs md:text-sm text-white hover:text-teal transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/10"
+                                    >
+                                        <Icons.User size={16} />
+                                        <span className="hidden md:inline">{currentUser}</span>
+                                        <Icons.ChevronDown />
+                                    </button>
+
+                                    {/* Profile Dropdown */}
+                                    {showProfile && (
+                                        <div className="absolute right-0 top-full mt-2 w-64 bg-midnight border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden glass-panel">
+                                            <div className="p-4 border-b border-white/10">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className="bg-teal/20 p-2 rounded-full">
+                                                        <Icons.User size={20} className="text-teal" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-white">{currentUser}</p>
+                                                        <p className="text-xs text-slate-400">User Profile</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-2">
+                                                <button 
+                                                    onClick={handleLogout}
+                                                    className="w-full flex items-center gap-2 text-sm text-red-400 hover:text-white hover:bg-red-500/20 px-3 py-2 rounded-lg transition-colors"
+                                                >
+                                                    <Icons.X size={14} />
+                                                    Sign Out
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
