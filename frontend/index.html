@@ -1525,6 +1525,8 @@
             const [isAuthenticated, setIsAuthenticated] = React.useState(false);
             const [currentUser, setCurrentUser] = React.useState(null);
             const [checkingAuth, setCheckingAuth] = React.useState(true);
+            const [showAdmin, setShowAdmin] = React.useState(false);
+            const [userList, setUserList] = React.useState([]);
 
             React.useEffect(() => {
                 // Check auth status on load
@@ -1550,9 +1552,25 @@
                     await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST' });
                     setIsAuthenticated(false);
                     setCurrentUser(null);
+                    setShowAdmin(false);
                     handleReset(); // Reset app state
                 } catch (err) {
                     console.error("Logout failed", err);
+                }
+            };
+
+            const fetchUsers = async () => {
+                try {
+                    const res = await fetch(`${API_BASE}/api/admin/users`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setUserList(data);
+                        setShowAdmin(true);
+                    } else {
+                        alert('Unauthorized access');
+                    }
+                } catch (err) {
+                    console.error(err);
                 }
             };
 
@@ -1566,6 +1584,40 @@
 
             if (!isAuthenticated) {
                 return <AuthPage onLogin={handleLogin} />;
+            }
+
+            // Admin View
+            if (showAdmin) {
+                return (
+                    <div className="min-h-screen bg-midnight p-6 text-white">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold text-teal">User Management</h2>
+                                <button onClick={() => setShowAdmin(false)} className="text-slate-400 hover:text-white">
+                                    <Icons.X />
+                                </button>
+                            </div>
+                            <div className="glass-panel rounded-xl overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead className="bg-ocean-dark text-teal border-b border-white/10">
+                                        <tr>
+                                            <th className="p-4">ID</th>
+                                            <th className="p-4">Username</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {userList.map(user => (
+                                            <tr key={user.id} className="hover:bg-white/5">
+                                                <td className="p-4 text-slate-400">#{user.id}</td>
+                                                <td className="p-4 font-medium">{user.username}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                );
             }
 
             // Stats data for display
@@ -1582,7 +1634,16 @@
                     <div className="max-w-5xl mx-auto w-full flex-1 flex flex-col">
                         {/* Header - Compact & Modern */}
                         <div className="text-center mb-6 pt-2 relative">
-                            <div className="absolute right-0 top-0">
+                            <div className="absolute right-0 top-0 flex gap-2">
+                                {currentUser === 'admin' && (
+                                    <button 
+                                        onClick={fetchUsers}
+                                        className="flex items-center gap-2 text-xs md:text-sm text-teal hover:text-white transition-colors bg-teal/10 hover:bg-teal/20 px-3 py-1.5 rounded-lg border border-teal/30"
+                                    >
+                                        <Icons.Users size={14} />
+                                        <span className="hidden md:inline">Manage Users</span>
+                                    </button>
+                                )}
                                 <button 
                                     onClick={handleLogout}
                                     className="flex items-center gap-2 text-xs md:text-sm text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg"

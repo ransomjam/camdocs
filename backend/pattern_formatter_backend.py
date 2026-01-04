@@ -99,6 +99,18 @@ def logout():
     logout_user()
     return jsonify({'message': 'Logged out successfully'}), 200
 
+@app.route('/api/admin/users', methods=['GET'])
+@login_required
+def list_users():
+    if current_user.username != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    users = User.query.all()
+    return jsonify([{
+        'id': u.id,
+        'username': u.username
+    } for u in users]), 200
+
 @app.route('/api/auth/status', methods=['GET'])
 def auth_status():
     if current_user.is_authenticated:
@@ -5410,6 +5422,76 @@ class PatternEngine:
         analysis['confidence'] = 0.70
         return analysis
 
+    # ============================================================================
+    # AI CONTENT CLEANING
+    # ============================================================================
+    
+    def detect_ai_generated_content(self, text):
+        """
+        Detects if text contains common AI generation artifacts.
+        Returns True if AI content detected.
+        """
+        if not text:
+            return False
+            
+        # Check for AI meta-commentary patterns
+        ai_patterns = [
+            r'^(Here is the|Here are the|Sure, here is|Certainly, here is)',
+            r'^(In conclusion|To summarize|Hope this helps)',
+            r'^Note:\s+',
+            r'^As an AI language model',
+            r'^I cannot generate',
+        ]
+        
+        for pattern in ai_patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                return True
+                
+        return False
+
+    def clean_ai_content(self, text):
+        """
+        Cleans common AI artifacts from text line.
+        Returns (cleaned_text, metadata)
+        """
+        if not text:
+            return text, {}
+            
+        clean_text = text.strip()
+        metadata = {'bold': False, 'italic': False, 'heading_level': 0}
+        
+        # 1. Remove Markdown Bold (**text**) if it wraps the whole line
+        bold_match = re.match(r'^\*\*(.*)\*\*$', clean_text)
+        if bold_match:
+            clean_text = bold_match.group(1)
+            metadata['bold'] = True
+        else:
+            # Remove inline bold markers but keep text
+            clean_text = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_text)
+            
+        # 2. Remove Markdown Italic (*text*)
+        clean_text = re.sub(r'\*(.*?)\*', r'\1', clean_text)
+        
+        # 3. Remove Markdown Headers (## text)
+        header_match = re.match(r'^(#{1,6})\s+(.*)', clean_text)
+        if header_match:
+            level = len(header_match.group(1))
+            clean_text = header_match.group(2)
+            metadata['heading_level'] = level
+            
+        # 4. Standardize Bullets
+        if re.match(r'^-\s+', clean_text):
+            clean_text = re.sub(r'^-\s+', '• ', clean_text)
+            
+        return clean_text, metadata
+
+    def optimize_page_breaks_for_ai(self, lines):
+        """
+        Optimizes page breaks for AI generated content.
+        """
+        # Placeholder for future logic
+        return lines
+
 
 # ============================================================================
 # COVER PAGE HANDLER - December 30, 2025
@@ -7126,6 +7208,14 @@ class DocumentProcessor:
                                 logger.info(f"Added image placeholder for {img['image_id']} at paragraph {paragraph_index}")
                         
                         if text:
+                            # Skip AI meta-commentary
+                            if self.engine.detect_ai_generated_content(text):
+                                paragraph_index += 1
+                                break
+                                
+                            # Clean AI artifacts
+                            text, metadata = self.engine.clean_ai_content(text)
+
                             font_size = 12  # Default
                             is_bold = False
                             if para.runs:
@@ -7133,9 +7223,17 @@ class DocumentProcessor:
                                 if para.runs[0].font.size:
                                     font_size = para.runs[0].font.size.pt
                             
+                            # Merge metadata from clean_ai_content
+                            if metadata.get('bold'):
+                                is_bold = True
+                                
+                            style = para.style.name if para.style else 'Normal'
+                            if metadata.get('heading_level'):
+                                style = f'Heading {metadata["heading_level"]}'
+                            
                             lines.append({
                                 'text': text,
-                                'style': para.style.name if para.style else 'Normal',
+                                'style': style,
                                 'bold': is_bold,
                                 'font_size': font_size,
                             })
@@ -7185,8 +7283,30 @@ class DocumentProcessor:
         # SECOND: Apply short document processing (TOC removal, key point emphasis)
         text = self.engine.process_short_document(text)
         
-        lines = [{'text': line, 'style': 'Normal', 'bold': False, 'font_size': 12} 
-                 for line in text.split('\n')]
+        # THIRD: AI Content Cleaning
+        lines = []
+        for line in text.split('\n'):
+            # Skip AI meta-commentary
+            if self.engine.detect_ai_generated_content(line):
+                continue
+                
+            # Clean AI artifacts
+            cleaned_line, metadata = self.engine.clean_ai_content(line)
+            
+            style = 'Normal'
+            if metadata.get('heading_level'):
+                style = f'Heading {metadata["heading_level"]}'
+            
+            lines.append({
+                'text': cleaned_line,
+                'style': style,
+                'bold': metadata.get('bold', False),
+                'font_size': 12
+            })
+            
+        # FOURTH: Optimize Page Breaks for AI
+        lines = self.engine.optimize_page_breaks_for_ai(lines)
+        
         return self.process_lines(lines), []  # No images in plain text
     
     def process_lines(self, lines):
