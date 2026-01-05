@@ -36,7 +36,7 @@ app.config['SECRET_KEY'] = 'your-secret-key-change-this-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-CORS(app)
+CORS(app, expose_headers=["Content-Disposition"])
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -3958,6 +3958,11 @@ class PatternEngine:
                     in_toc = False
                     cleaned_lines.append(line)
                     continue
+                
+                # Fallback: If line is not blank and not TOC content, assume TOC ended
+                # This prevents deleting the whole document if headings aren't detected
+                in_toc = False
+                cleaned_lines.append(line)
             else:
                 cleaned_lines.append(line)
         
@@ -5489,6 +5494,11 @@ class PatternEngine:
         if not text:
             return False
             
+        # Safety check: Don't skip long paragraphs even if they start with trigger words
+        # AI meta-commentary is usually short (e.g. "Here is the text:")
+        if len(text) > 150:
+            return False
+
         # Check for AI meta-commentary patterns
         ai_patterns = [
             r'^(Here is the|Here are the|Sure, here is|Certainly, here is)',
@@ -7332,6 +7342,12 @@ class DocumentProcessor:
     
     def process_text(self, text):
         """Process plain text (no images in plain text)"""
+        if not text:
+            return self.process_lines([]), []
+
+        # Normalize line endings to ensure consistent splitting
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+
         # FIRST: Apply document-wide spacing cleanup
         text = self.engine.clean_document_spacing(text)
         
@@ -8202,6 +8218,99 @@ class DocumentProcessor:
         
         return sections
 
+    def generate_smart_filename(self, structured_data, original_filename=None):
+        """
+        Generate a smart filename based on document content.
+        Priorities:
+        1. If Uploaded File: Original Filename + _formatted
+        2. If Pasted: Cover Page > Heading > Content > Fallback
+        """
+        # Check if it's a real uploaded file (not pasted)
+        is_pasted = False
+        if original_filename:
+            name_lower = original_filename.lower()
+            if "pasted_document" in name_lower or "pasted document" in name_lower:
+                is_pasted = True
+        else:
+            is_pasted = True
+            
+        # PRIORITY 1: Uploaded File -> Maintain Name + _formatted
+        if not is_pasted and original_filename:
+            name_without_ext = os.path.splitext(original_filename)[0]
+            # Sanitize
+            base_name = re.sub(r'[<>:"/\\|?*]', '', name_without_ext)
+            base_name = re.sub(r'\s+', ' ', base_name).strip()
+            return f"{base_name}_formatted"
+
+        # PRIORITY 2: Pasted Content -> Smart Naming
+        base_name = "document"
+        
+        # 1. Check Cover Page Data
+        if self.cover_page_data:
+            title = self.cover_page_data.get('title', '')
+            student = self.cover_page_data.get('student_name', '')
+            
+            if title and student:
+                # Shorten title if too long
+                short_title = ' '.join(title.split()[:5])
+                base_name = f"{short_title} - {student}"
+            elif title:
+                short_title = ' '.join(title.split()[:5])
+                base_name = short_title
+        
+        # 2. Check First Heading if no cover page title
+        elif structured_data:
+            # 2a. Look for H1
+            for section in structured_data:
+                if section.get('level') == 1 and section.get('heading'):
+                    heading = section.get('heading').strip()
+                    if heading and heading.lower() != 'document':
+                        base_name = heading
+                        break
+            
+            # 2b. If no H1, look for H2
+            if base_name == "document":
+                for section in structured_data:
+                    if section.get('level') == 2 and section.get('heading'):
+                        heading = section.get('heading').strip()
+                        if heading:
+                            base_name = heading
+                            break
+            
+            # 2c. If still no heading, try first paragraph text
+            if base_name == "document":
+                for section in structured_data:
+                    for item in section.get('content', []):
+                        if item.get('type') == 'paragraph':
+                            text = item.get('text', '').strip()
+                            if text:
+                                # Use first few words (max 6)
+                                words = text.split()
+                                if words:
+                                    base_name = ' '.join(words[:6])
+                                    break
+                    if base_name != "document":
+                        break
+
+        # 3. Fallback to original filename (unless it's the generic paste name)
+        if base_name == "document" and original_filename:
+            name_without_ext = os.path.splitext(original_filename)[0]
+            if "pasted_document" not in name_without_ext.lower():
+                base_name = name_without_ext
+            else:
+                base_name = "Untitled Document"
+            
+        # Sanitize filename
+        # Remove invalid chars: < > : " / \ | ? *
+        base_name = re.sub(r'[<>:"/\\|?*]', '', base_name)
+        base_name = re.sub(r'\s+', ' ', base_name).strip()
+        
+        # Limit length
+        if len(base_name) > 50:
+            base_name = base_name[:50].strip()
+            
+        return base_name
+
 
 class WordGenerator:
     """Generate formatted Word documents with image support"""
@@ -8466,8 +8575,11 @@ class WordGenerator:
         # Add all sections
         rendered_section_count = 0
         for i, section in enumerate(structured_data):
-            # Skip "Document" title section if it appears
+            # Special handling for "Document" title section (auto-generated for unstructured text)
             if section.get('heading', '').strip().lower() == 'document':
+                # Just add content, skip heading
+                self._add_section_content(section)
+                rendered_section_count += 1
                 continue
 
             # If we just added a TOC/LOF/LOT break, and this is the first RENDERED section,
@@ -11192,6 +11304,31 @@ def upload_document():
             logger.error(f"Invalid processing result format: {type(result)}")
             return jsonify({'error': 'Document processing failed to produce structured data'}), 500
 
+        # Generate smart filename
+        smart_filename = processor.generate_smart_filename(result['structured'], file.filename)
+        logger.info(f"Generated smart filename: {smart_filename}")
+        
+        # Update metadata with smart filename
+        try:
+            meta_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_meta.json")
+            if os.path.exists(meta_path):
+                with open(meta_path, 'r') as f:
+                    metadata = json.load(f)
+                
+                metadata['smart_filename'] = smart_filename
+                
+                with open(meta_path, 'w') as f:
+                    json.dump(metadata, f)
+                    
+            # Update DocumentRecord if exists
+            if current_user.is_authenticated:
+                doc_record = DocumentRecord.query.filter_by(job_id=job_id).first()
+                if doc_record:
+                    doc_record.filename = f"{smart_filename}.docx"
+                    db.session.commit()
+        except Exception as e:
+            logger.error(f"Failed to update metadata with smart filename: {e}")
+
         # Generate formatted Word document with images
         output_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_formatted.docx")
         generator = WordGenerator()
@@ -11221,6 +11358,7 @@ def upload_document():
             'download_url': f'/download/{job_id}',
             'status': 'complete',
             'images_preserved': len(images),
+            'filename': f"{smart_filename}.docx"
         })
     
     except Exception as e:
@@ -11252,10 +11390,15 @@ def download_document(job_id):
         try:
             with open(meta_path, 'r') as f:
                 metadata = json.load(f)
-                original_name = metadata.get('original_filename', '')
-                if original_name:
-                    name, ext = os.path.splitext(original_name)
-                    download_name = f"{name}_formatted.docx"
+                
+                # Check for smart filename first
+                if metadata.get('smart_filename'):
+                    download_name = f"{metadata['smart_filename']}.docx"
+                else:
+                    original_name = metadata.get('original_filename', '')
+                    if original_name:
+                        name, ext = os.path.splitext(original_name)
+                        download_name = f"{name}_formatted.docx"
         except Exception as e:
             logger.error(f"Error reading metadata for job {job_id}: {e}")
     
@@ -11332,8 +11475,9 @@ def _convert_docx_to_pdf(docx_path, pdf_path):
             return False, f'LibreOffice conversion failed: {str(e)}'
 
 
-@app.route('/download-pdf/<job_id>', methods=['GET'])
-def download_pdf(job_id):
+@app.route('/download-pdf/<job_id>', defaults={'filename': None}, methods=['GET'])
+@app.route('/download-pdf/<job_id>/<filename>', methods=['GET'])
+def download_pdf(job_id, filename):
     """Convert and download document as PDF"""
     docx_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_formatted.docx")
     pdf_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_formatted.pdf")
@@ -11343,27 +11487,41 @@ def download_pdf(job_id):
         
     # Determine filename
     download_name = 'formatted_document.pdf'
-    meta_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_meta.json")
-    if os.path.exists(meta_path):
-        try:
-            with open(meta_path, 'r') as f:
-                metadata = json.load(f)
-                original_name = metadata.get('original_filename', '')
-                if original_name:
-                    name, ext = os.path.splitext(original_name)
-                    download_name = f"{name}_formatted.pdf"
-        except:
-            pass
+    
+    # If filename is provided in URL, use it (security check needed?)
+    if filename:
+        download_name = filename
+    else:
+        # Fallback to metadata lookup
+        meta_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_meta.json")
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, 'r') as f:
+                    metadata = json.load(f)
+                    
+                    # Check for smart filename first
+                    if metadata.get('smart_filename'):
+                        download_name = f"{metadata['smart_filename']}.pdf"
+                    else:
+                        original_name = metadata.get('original_filename', '')
+                        if original_name:
+                            name, ext = os.path.splitext(original_name)
+                            download_name = f"{name}_formatted.pdf"
+            except:
+                pass
+
+    # Check for inline parameter
+    as_attachment = request.args.get('inline', 'false').lower() != 'true'
 
     # Check if PDF already exists
     if os.path.exists(pdf_path):
-        return send_file(pdf_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
+        return send_file(pdf_path, as_attachment=as_attachment, download_name=download_name, mimetype='application/pdf')
 
     # Convert to PDF
     success, error = _convert_docx_to_pdf(docx_path, pdf_path)
     
     if success and os.path.exists(pdf_path):
-        return send_file(pdf_path, as_attachment=True, download_name=download_name, mimetype='application/pdf')
+        return send_file(pdf_path, as_attachment=as_attachment, download_name=download_name, mimetype='application/pdf')
     else:
         return jsonify({'error': error or 'PDF conversion failed'}), 500
 
@@ -11466,6 +11624,9 @@ def api_generate_coverpage():
     if error:
         return jsonify({'error': error}), 400
         
+    # Generate a new job_id for this cover page result
+    job_id = str(uuid.uuid4())
+    
     # Check for merge request
     merge_job_id = data.get('mergeJobId')
     if merge_job_id:
@@ -11693,24 +11854,72 @@ def api_generate_coverpage():
             logger.error(f"Error merging documents: {str(e)}")
             # We continue without merging if it fails, or we could return an error
             # For now, let's just log it and return the cover page
+
+    # Rename output file to standard format {job_id}_formatted.docx
+    formatted_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_formatted.docx")
+    try:
+        if os.path.exists(formatted_path):
+            os.remove(formatted_path)
+        os.rename(output_path, formatted_path)
+        output_path = formatted_path
+    except Exception as e:
+        logger.error(f"Failed to rename output file: {e}")
+        # Fallback to original path if rename fails, but this will break PDF download
+        pass
+
+    # Calculate smart filename
+    smart_filename = None
+    try:
+        title = data.get('title', '')
+        student = data.get('studentName', '')
+        
+        if title and student:
+            short_title = ' '.join(title.split()[:5])
+            smart_filename = f"{short_title} - {student}"
+        elif title:
+            short_title = ' '.join(title.split()[:5])
+            smart_filename = short_title
             
-    # Return the file
-    filename = os.path.basename(output_path)
+        if smart_filename:
+            # Sanitize
+            smart_filename = re.sub(r'[<>:"/\\|?*]', '', smart_filename)
+            smart_filename = re.sub(r'\s+', ' ', smart_filename).strip()
+            if len(smart_filename) > 50:
+                smart_filename = smart_filename[:50].strip()
+    except Exception as e:
+        logger.error(f"Failed to calculate smart filename: {e}")
+
+    # Save metadata
+    try:
+        original_filename = os.path.basename(output_path) # This might be the old name if rename failed
+        # But we want the "friendly" name for the user
+        friendly_name = f"{smart_filename}.docx" if smart_filename else "CoverPage.docx"
+        
+        metadata = {
+            'job_id': job_id,
+            'original_filename': friendly_name,
+            'smart_filename': smart_filename,
+            'created_at': datetime.now().isoformat(),
+            'merged_from': merge_job_id
+        }
+        
+        with open(os.path.join(OUTPUT_FOLDER, f"{job_id}_meta.json"), 'w') as f:
+            json.dump(metadata, f)
+    except Exception as e:
+        logger.error(f"Failed to save metadata: {e}")
+
+    # Return the file info
+    # We return the friendly filename for the UI
+    filename = f"{smart_filename}.docx" if smart_filename else "CoverPage.docx"
     
     # Update DocumentRecord if exists
     if current_user.is_authenticated:
         try:
-            # Find the record for this job
-            # We might need to pass job_id to this function or infer it
-            # For now, let's assume we can find the most recent record for this user with this filename pattern
-            # Or better, update the record created during upload if we had the job_id
-            # But here we are in coverpage_generator logic which is separate.
-            # Let's just create a NEW record for the cover page version
             doc_record = DocumentRecord(
                 user_id=current_user.id,
                 filename=filename,
-                original_filename=f"Cover Page for {filename}",
-                job_id=mergeJobId if 'mergeJobId' in locals() else None, # We don't have mergeJobId here easily
+                original_filename=f"Cover Page: {filename}",
+                job_id=job_id,
                 file_path=filename # Relative to Cover Pages folder
             )
             db.session.add(doc_record)
@@ -11720,8 +11929,9 @@ def api_generate_coverpage():
 
     return jsonify({
         'success': True,
+        'job_id': job_id,
         'filename': filename,
-        'downloadUrl': f'/api/download/{filename}'
+        'downloadUrl': f'/download/{job_id}'
     })
 
 @app.route('/api/download/<filename>', methods=['GET'])
