@@ -1502,6 +1502,8 @@
             const handleDownload = async (format = 'docx') => {
                 if (!result || !result.job_id) return;
 
+                setShowSuccessMessage(false);
+
                 // Trigger download
                 const endpoint = format === 'pdf' ? 'download-pdf' : 'download';
                 const downloadUrl = `${API_BASE}/${endpoint}/${result.job_id}?inline=false`;
@@ -2072,14 +2074,7 @@
                                             <button
                                                 onClick={() => {
                                                     const currentJobId = result.job_id;
-                                                    // Reset UI but preserve job ID for cover page
-                                                    setFile(null);
-                                                    setProcessing(false);
-                                                    setProgress(0);
-                                                    setStatus('');
-                                                    setResult(null);
-                                                    setPreview(null);
-                                                    setError(null);
+                                                    // Hide success message but keep result/buttons available
                                                     setShowSuccessMessage(false);
                                                     setShowShare(false);
                                                     if (fileInputRef.current) {
